@@ -277,6 +277,11 @@ configure(allprojects) { project ->
 			cacheChangingModulesFor 0, "seconds"
 		}
 		repositories {
+			// Gradle没有自己的中央仓库
+			// 先从本地maven仓库寻找依赖的jar包，存在则直接使用本地maven仓库的jar
+			mavenLocal()
+			maven {   url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+			// 配置使用Maven的中央仓库
 			mavenCentral()
 			maven { url "https://repo.spring.io/libs-spring-framework-build" }
 		}
