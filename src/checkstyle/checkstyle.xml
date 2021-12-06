@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
 <module name="com.puppycrawl.tools.checkstyle.Checker">
-	<!-- Suppressions -->
+	<!--&lt;!&ndash; Suppressions &ndash;&gt;
 	<module name="SuppressionFilter">
 		<property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
 	</module>
 
-	<!-- Root Checks -->
+	&lt;!&ndash; Root Checks &ndash;&gt;
 	<module name="io.spring.javaformat.checkstyle.check.SpringHeaderCheck">
 		<property name="fileExtensions" value="java" />
 		<property name="headerType" value="apache2"/>
@@ -17,9 +17,9 @@
 		<property name="lineSeparator" value="lf"/>
 	</module>
 
-	<!-- TreeWalker Checks -->
+	&lt;!&ndash; TreeWalker Checks &ndash;&gt;
 	<module name="com.puppycrawl.tools.checkstyle.TreeWalker">
-		<!-- Annotations -->
+		&lt;!&ndash; Annotations &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.annotation.AnnotationUseStyleCheck">
 			<property name="elementStyle" value="compact" />
 		</module>
@@ -30,7 +30,7 @@
 				value="false" />
 		</module>
 
-		<!-- Block Checks -->
+		&lt;!&ndash; Block Checks &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.blocks.EmptyBlockCheck">
 			<property name="option" value="text" />
 		</module>
@@ -41,7 +41,7 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.blocks.NeedBracesCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.blocks.AvoidNestedBlocksCheck" />
 
-		<!-- Class Design -->
+		&lt;!&ndash; Class Design &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.design.FinalClassCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.design.InterfaceIsTypeCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.design.HideUtilityClassConstructorCheck" />
@@ -51,7 +51,7 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.design.InnerTypeLastCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.design.OneTopLevelClassCheck" />
 
-		<!-- Type Names -->
+		&lt;!&ndash; Type Names &ndash;&gt;
 		<module name="TypeName">
 			<property name="format" value="^[A-Z][a-zA-Z0-9_]*(?&lt;!Test)$" />
 			<property name="tokens" value="CLASS_DEF" />
@@ -59,7 +59,7 @@
 				value="Class name ''{0}'' must not end with ''Test'' (checked pattern ''{1}'')." />
 		</module>
 
-		<!-- Coding -->
+		&lt;!&ndash; Coding &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.CovariantEqualsCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.EmptyStatementCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.EqualsHashCodeCheck" />
@@ -91,7 +91,7 @@
 		</module>
 		<module name="com.puppycrawl.tools.checkstyle.checks.coding.OneStatementPerLineCheck" />
 
-		<!-- Imports -->
+		&lt;!&ndash; Imports &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.AvoidStarImportCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.RedundantImportCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck">
@@ -137,7 +137,7 @@
 			<property name="illegalClasses" value="^org\.hamcrest\..+" />
 		</module>
 
-		<!-- Javadoc Comments -->
+		&lt;!&ndash; Javadoc Comments &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck">
 			<property name="scope" value="package"/>
 			<property name="authorFormat" value=".+\s.+"/>
@@ -167,7 +167,7 @@
     		<property name="tagOrder" value="@param, @return, @throws, @since, @deprecated, @see"/>
 		</module>
 
-		<!-- Miscellaneous -->
+		&lt;!&ndash; Miscellaneous &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.indentation.CommentsIndentationCheck">
 			<property name="tokens" value="BLOCK_COMMENT_BEGIN"/>
 		</module>
@@ -175,7 +175,7 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.ArrayTypeStyleCheck" />
 		<module name="com.puppycrawl.tools.checkstyle.checks.OuterTypeFilenameCheck" />
 
-		<!-- Regexp -->
+		&lt;!&ndash; Regexp &ndash;&gt;
 		<module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpSinglelineJavaCheck">
 			<property name="format" value="^\t* +\t*\S" />
 			<property name="message"
@@ -227,18 +227,18 @@
 		<module name="com.puppycrawl.tools.checkstyle.checks.regexp.RegexpSinglelineJavaCheck">
 			<property name="id" value="testNGAssertions"/>
 			<property name="maximum" value="0"/>
-			<!-- should cover org.testng.Assert and org.testng.AssertJUnit -->
+			&lt;!&ndash; should cover org.testng.Assert and org.testng.AssertJUnit &ndash;&gt;
 			<property name="format" value="org\.testng\.Assert(JUnit)?\.assert" />
 			<property name="message" value="Please use AssertJ assertions." />
 			<property name="ignoreComments" value="true" />
 		</module>
 
-		<!-- Spring Conventions -->
+		&lt;!&ndash; Spring Conventions &ndash;&gt;
 		<module name="io.spring.javaformat.checkstyle.check.SpringLambdaCheck">
 			<property name="singleArgumentParentheses" value="false" />
 		</module>
 		<module name="io.spring.javaformat.checkstyle.check.SpringCatchCheck" />
 		<module name="io.spring.javaformat.checkstyle.check.SpringJavadocCheck" />
 		<module name="io.spring.javaformat.checkstyle.check.SpringJUnit5Check" />
- 	</module>
+ 	</module>-->
 </module>
