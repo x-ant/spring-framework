@@ -88,7 +88,11 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		this();
 		// 配置类的注册
 		register(componentClasses);
-		// spring容器初始化的过程
+		/**
+		 * 1、扫描
+		 * 2、bean的是实例化
+		 * ...
+		 */
 		refresh();
 	}
 

@@ -242,12 +242,24 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	protected <T> T doGetBean(
 			String name, @Nullable Class<T> requiredType, @Nullable Object[] args, boolean typeCheckOnly)
 			throws BeansException {
-
+		/**
+		 * 1、对beanName进行验证合法性
+		 * 2、factory
+		 */
 		String beanName = transformedBeanName(name);
 		Object bean;
 
 		// Eagerly check singleton cache for manually registered singletons.
+		/**
+		 * 1、为了循环依赖
+		 * 2、验证当前对象是不是存在于容器中
+		 */
 		Object sharedInstance = getSingleton(beanName);
+		/**
+		 * 什么情况不等于null
+		 * 1、bean被提前创建(不包含循环依赖）或者多线程
+		 * 2、存在循环依赖会提前创建
+		 */
 		if (sharedInstance != null && args == null) {
 			if (logger.isTraceEnabled()) {
 				if (isSingletonCurrentlyInCreation(beanName)) {
@@ -264,6 +276,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		else {
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
+			/**
+			 * 判断这个对象是否存在正在创建的原型集合当中
+			 */
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
@@ -319,8 +334,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 				// Create bean instance.
 				if (mbd.isSingleton()) {
+					/**
+					 * 实例化bean，完成bean的生命周期
+					 */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
+							// 真的完成java对象的创建，走bean的生命周期
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {
