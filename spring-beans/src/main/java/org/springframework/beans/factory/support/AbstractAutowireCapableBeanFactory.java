@@ -1204,7 +1204,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Candidate constructors for autowiring?
-		// 如果是自动装配，从候选的构造方法中推断出一个合理的构造方法
+		// 如果是自动装配，从候选的构造方法中推断出一个合理的构造方法，如果没有提供构造方法，则返回null，默认构造方法不算
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
@@ -1219,6 +1219,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// No special handling: simply use no-arg constructor.
+		// 用无参构造方法创建java实例
 		return instantiateBean(beanName, mbd);
 	}
 

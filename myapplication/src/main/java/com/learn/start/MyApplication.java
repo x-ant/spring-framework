@@ -14,8 +14,8 @@ public class MyApplication {
 	 * 简单生命周期
 	 * 1、实例化spring容器
 	 * 2、扫描符合spring bean规则的class -- 集合
-	 * 3、便利这个结合当中的类--封装成为一个bd对象
-	 * 4、便利beanDefinitionMap -- bd对象
+	 * 3、遍历这个集合当中的类--封装成为一个bd对象
+	 * 4、遍历beanDefinitionMap -- bd对象
 	 * 5、解析-- validate
 	 * 6、通过 -- bd -- class
 	 * 7、得到所有构造方法--通过算法推断出一个合理的构造函数

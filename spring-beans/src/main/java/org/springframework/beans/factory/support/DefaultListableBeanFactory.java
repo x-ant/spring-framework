@@ -879,6 +879,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
 			/**
+			 * 在这里打条件断点，判断要观察的bean
 			 * 1、通过beanName作为key，从mergedDeanDefinitionMap中得到一个bd
 			 */
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
@@ -907,6 +908,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}
 				}
 				else {
+					// 这里如果没有则创建（会创建java实例），如果有则返回，对应bean工厂AbstractBeanFactory，和从容器getBean不是一个
 					getBean(beanName);
 				}
 			}
