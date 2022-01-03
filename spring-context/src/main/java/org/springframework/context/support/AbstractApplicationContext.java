@@ -535,6 +535,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				 * 完成bean的扫描和注册
 				 * 1、扫描--class--bd对象 put到bdMap中
 				 * 2、执行beanFactoryPostProcessor--
+				 * 3、放入单例池
 				 *
  				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
@@ -714,6 +715,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+		// 实际完成bean的实例化，放入单例池
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime

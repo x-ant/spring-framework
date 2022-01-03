@@ -204,6 +204,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 	@Override
 	public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
+		// 注册bd时用的工厂
 		return doGetBean(name, requiredType, null, false);
 	}
 
