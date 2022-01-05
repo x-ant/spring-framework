@@ -52,13 +52,37 @@ final class PostProcessorRegistrationDelegate {
 	private PostProcessorRegistrationDelegate() {
 	}
 
-
+	/**
+	 * 执行BeanFactoryPostProcessors的所有实现类
+	 * 所有实现类{
+	 *     1、spring内置的---在这个方法之前它就被封装成了bd，并且put到了bdmap中
+	 *     		这种内置的如果没有被封装成bd--没有put到bdmap，就不会变成bean，就没法执行
+	 *     2、程序员提供
+	 *     		通过扫描出来（bd bdmap bean 再执行一次，这个再次的意思是相对于内置的bean）
+	 *     		通过api提供（直接调用这个方法然后传入list）
+	 *     3、实现了Ordered接口的类
+	 * }
+	 * 所有实现类的层级关系{
+	 *     1、直接实现了BeanFactoryPostProcessors
+	 *     2、BeanFactoryPostProcessors的子类（比如BeanDefinitionRegistryPostProcessor子接口）
+	 *     上面两种，从代码看，先执行了子类，即第二种
+	 *     如果想要在扫描之前加一些扩展的话，可以从这下手
+	 * }
+	 * BeanFactoryPostProcessor这个集合一般情况下等于null
+	 * 只有程序员通过spring容器对象 手动添加的BeanFactoryPostProcessor对象这个才不为空
+	 *
+	 * @param beanFactory bean工厂
+	 * @param beanFactoryPostProcessors 工厂生产完bean的后置处理
+	 */
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
+		// 存储已经处理完成的BeanFactoryPostProcessor的名字
 		Set<String> processedBeans = new HashSet<>();
 
+		// ConfigurableListableBeanFactory这个参数类型确实实现了BeanDefinitionRegistry
+		// 正常情况下是一定成立的
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
@@ -80,6 +104,10 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
+			// 存储的是当前需要执行的BeanDefinitionRegistryPostProcessor的实现类的对象
+			// 每次执行完都会清除，防止重复执行
+			// BeanDefinitionRegistryPostProcessor是BeanFactoryPostProcessor的子接口，只是多一个方法定义
+			// 所以可以认为BeanDefinitionRegistryPostProcessor是BeanFactoryPostProcessor的一种
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
@@ -88,15 +116,19 @@ final class PostProcessorRegistrationDelegate {
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
-					// 放入单例池
+					// 参数中的getBean会放入单例池，工厂才有放入单例池这一说，所以实现类不会是xxxContext
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
 			}
+
+			// region ========== 排序，汇总、调用、清除 ==========
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
+			// 调用BeanDefinitionRegistryPostProcessors的方法，子接口自己的方法
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
+			// endregion
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
@@ -106,10 +138,13 @@ final class PostProcessorRegistrationDelegate {
 					processedBeans.add(ppName);
 				}
 			}
+
+			// region ========== 排序，汇总、调用、清除 ==========
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
+			// endregion
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
 			boolean reiterate = true;
@@ -123,10 +158,13 @@ final class PostProcessorRegistrationDelegate {
 						reiterate = true;
 					}
 				}
+
+				// region ========== 排序，汇总、调用、清除 ==========
 				sortPostProcessors(currentRegistryProcessors, beanFactory);
 				registryProcessors.addAll(currentRegistryProcessors);
 				invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 				currentRegistryProcessors.clear();
+				// endregion
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.

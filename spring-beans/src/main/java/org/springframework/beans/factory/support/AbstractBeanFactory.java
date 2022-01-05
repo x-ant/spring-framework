@@ -204,7 +204,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 	@Override
 	public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-		// 注册bd时用的工厂
+		// 注册bd时用的工厂，如果是新的就放入单例池
 		return doGetBean(name, requiredType, null, false);
 	}
 
@@ -336,7 +336,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Create bean instance.
 				if (mbd.isSingleton()) {
 					/**
-					 * 实例化bean，完成bean的生命周期
+					 * 实例化bean，完成bean的生命周期，放入单例池
 					 */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {

@@ -908,7 +908,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					}
 				}
 				else {
-					// 这里如果没有则创建（会创建java实例），如果有则返回，对应bean工厂AbstractBeanFactory，和从容器getBean不是一个
+					// 这里如果没有则创建（会创建java实例），如果有则返回，对应bean工厂AbstractBeanFactory，
+					// 和从容器getBean不是一个，放入单例池
 					getBean(beanName);
 				}
 			}
