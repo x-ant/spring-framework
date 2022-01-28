@@ -253,6 +253,7 @@ public class AnnotatedBeanDefinitionReader {
 		 * 把class对象转换为一个bd对象
 		 */
 		AnnotatedGenericBeanDefinition abd = new AnnotatedGenericBeanDefinition(beanClass);
+		// 这里获取了注解
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
