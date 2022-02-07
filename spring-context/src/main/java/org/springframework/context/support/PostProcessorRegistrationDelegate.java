@@ -58,8 +58,8 @@ final class PostProcessorRegistrationDelegate {
 	 *     1、spring内置的---在这个方法之前它就被封装成了bd，并且put到了bdmap中
 	 *     		这种内置的如果没有被封装成bd--没有put到bdmap，就不会变成bean，就没法执行
 	 *     2、程序员提供
-	 *     		通过扫描出来（bd bdmap bean 再执行一次，这个再次的意思是相对于内置的bean）
-	 *     		通过api提供（直接调用这个方法然后传入list）
+	 *     		通过扫描出来，比如写了@Component（bd bdmap bean 再执行一次，这个再次的意思是相对于内置的bean）
+	 *     		通过api提供（直接调用这个方法然后传入list）或者ac.addBeanFactoryPostProcessor()
 	 *     3、实现了Ordered接口的类
 	 * }
 	 * 所有实现类的层级关系{
@@ -71,6 +71,11 @@ final class PostProcessorRegistrationDelegate {
 	 * BeanFactoryPostProcessor这个集合一般情况下等于null
 	 * 只有程序员通过spring容器对象 手动添加的BeanFactoryPostProcessor对象这个才不为空
 	 *
+	 * 在这个方法之前，spring内置的会放到bdmap中，然后通过bdmap newInstance，然后执行，
+	 * 也就是说内置的一定在这个方法之前就存在于bdmap
+	 * 但是自定义的bean在这个方法前没有，最终也可以执行，因为内置的bean执行时会完成扫描，
+	 * 扫描的动作就是这些内置的bean完成的，所以需要先把内置bean实例化，然后把自定义的bean，扫描、放入bdmap、执行PostProcessors等
+	 *
 	 * @param beanFactory bean工厂
 	 * @param beanFactoryPostProcessors 工厂生产完bean的后置处理
 	 */
@@ -78,7 +83,8 @@ final class PostProcessorRegistrationDelegate {
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
-		// 存储已经处理完成的BeanFactoryPostProcessor的名字
+		// 存储已经处理完成的BeanFactoryPostProcessor的名字，每一步都可以作为下一次的判断，
+		// 内置、程序员提供、Ordered接口的，就是方法注释中的三种
 		Set<String> processedBeans = new HashSet<>();
 
 		// ConfigurableListableBeanFactory这个参数类型确实实现了BeanDefinitionRegistry
@@ -88,6 +94,8 @@ final class PostProcessorRegistrationDelegate {
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
+			// BeanFactoryPostProcessor这个集合一般情况下等于null
+			// 只有程序员通过spring容器对象 手动添加的BeanFactoryPostProcessor对象这个才不为空
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
@@ -111,13 +119,17 @@ final class PostProcessorRegistrationDelegate {
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
-			//
+			// spring内置的
+			// 从bdmap中获取BeanDefinition的name
+			// 从bdmap 获取BeanDefinition的beanClass类型为BeanDefinitionRegistryPostProcessor
+			// 执行spring内置的BeanDefinitionRegistryPostProcessor
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 					// 参数中的getBean会放入单例池，工厂才有放入单例池这一说，所以实现类不会是xxxContext
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
+					// 标记这里已经处理过了，这里处理的是spring内置的，下面可以判断出余下的就是程序员提供的了
 					processedBeans.add(ppName);
 				}
 			}
@@ -131,8 +143,10 @@ final class PostProcessorRegistrationDelegate {
 			// endregion
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
+			// 程序员提供
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
+				// 第一步已经标记过了，所以processedBeans中是内置的，如果不是内置的说明是程序员提供的
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
@@ -150,6 +164,7 @@ final class PostProcessorRegistrationDelegate {
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
+				// 实现了Ordered接口的类
 				postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 				for (String ppName : postProcessorNames) {
 					if (!processedBeans.contains(ppName)) {
