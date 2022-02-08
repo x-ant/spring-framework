@@ -496,7 +496,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 	/**
-	 * 拿到这个class实现类的bean的名字
+	 * 拿到这个class实现类的bean的名字，由于class可以是一个interface，所以返回对应多个bean的实现类
 	 */
 	@Override
 	public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
@@ -516,6 +516,15 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		return resolvedBeanNames;
 	}
 
+	/**
+	 * 从bdmap中获取type类型bean的beanName，type相当于一个接口，
+	 * 可以对应多个bean所以会返回一个数组
+	 *
+	 * @param type
+	 * @param includeNonSingletons
+	 * @param allowEagerInit
+	 * @return
+	 */
 	private String[] doGetBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit) {
 		List<String> result = new ArrayList<>();
 

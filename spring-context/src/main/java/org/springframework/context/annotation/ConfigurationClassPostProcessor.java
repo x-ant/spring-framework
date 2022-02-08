@@ -221,6 +221,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	/**
 	 * Derive further bean definitions from the configuration classes in the registry.
 	 */
+	/**
+	 *  这个postProcessor就是在invokeBeanFactoryPostProcessors调用之前就放入，
+	 *  之后调用invokeBeanFactoryPostProcessors的第一步，就是执行这些spring内置的postProcessor
+	 *  这个内置的postProcessor就完成了其余bean(程序员提供的bean)的扫描，放入bdmap
+	 *
+	 * @param registry the bean definition registry used by the application context
+	 */
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
 		int registryId = System.identityHashCode(registry);

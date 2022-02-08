@@ -40,6 +40,9 @@ import org.springframework.lang.Nullable;
  */
 public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
+
+	// 默认只提供 sington 和 prototype 两种，
+	// 另外 request, session, globalSession, application, websocket 这几种属于基于 web 的扩展。
 	/**
 	 * Scope identifier for the standard singleton scope: {@value}.
 	 * <p>Note that extended bean factories might support further scopes.
@@ -85,6 +88,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// Modifiable attributes
 
+	// 设置父 Bean，这里涉及到 bean 继承，不是 java 继承
+	// 一句话就是：继承父 Bean 的配置信息而已
 	/**
 	 * Set the name of the parent definition of this bean definition, if any.
 	 */
@@ -96,6 +101,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getParentName();
 
+	// 设置 Bean 的类名称，将来是要通过反射来生成实例的
 	/**
 	 * Specify the bean class name of this bean definition.
 	 * <p>The class name can be modified during bean factory post-processing,
@@ -148,6 +154,10 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	boolean isLazyInit();
 
+	// 设置该 Bean 依赖的所有的 Bean，注意，这里的依赖不是指属性依赖(如 @Autowire 标记的)，
+	// 是 depends-on="" 属性设置的值。depends-on保证依赖的bean在当前bean之前初始化，在当前bean之后再销毁。依赖不可以闭环
+	// 这个依赖是间接的依赖，不是autowire这样的直接依赖。比如发布监听中，监听的一方想要确保接受所有信息，需要先初始化。
+	// 即便被依赖的bean上面有@Lazy，@DependsOn一样可以让其先加载，权重较高
 	/**
 	 * Set the names of the beans that this bean depends on being initialized.
 	 * The bean factory will guarantee that these beans get initialized first.
@@ -160,6 +170,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String[] getDependsOn();
 
+	// 设置该 Bean 是否可以注入到其他 Bean 中，只对根据类型注入有效，
+	// 如果根据名称注入，即使这边设置了 false 也没用，一样会注入
 	/**
 	 * Set whether this bean is a candidate for getting autowired into some other bean.
 	 * <p>Note that this flag is designed to only affect type-based autowiring.
@@ -174,6 +186,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	boolean isAutowireCandidate();
 
+	// 同一接口的多个实现，如果不指定名字的话，Spring 会优先选择设置 primary 为 true 的 bean
 	/**
 	 * Set whether this bean is a primary autowire candidate.
 	 * <p>If this value is {@code true} for exactly one bean among multiple

@@ -65,7 +65,7 @@ final class PostProcessorRegistrationDelegate {
 	 * 所有实现类的层级关系{
 	 *     1、直接实现了BeanFactoryPostProcessors
 	 *     2、BeanFactoryPostProcessors的子类（比如BeanDefinitionRegistryPostProcessor子接口）
-	 *     上面两种，从代码看，先执行了子类，即第二种
+	 *     上面两种，从代码看，先执行了子类，即第二种BeanDefinitionRegistryPostProcessor
 	 *     如果想要在扫描之前加一些扩展的话，可以从这下手
 	 * }
 	 * BeanFactoryPostProcessor这个集合一般情况下等于null
@@ -100,6 +100,9 @@ final class PostProcessorRegistrationDelegate {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
+					// 如我们自己implements BeanDefinitionRegistryPostProcessor并且没有加@Component
+					// 而是我们自己手动添加的ApplicationContext.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessor());
+					// 那么在下面这句话就会执行重写的方法;
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
