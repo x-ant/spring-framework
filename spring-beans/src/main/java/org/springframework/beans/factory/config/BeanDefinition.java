@@ -22,6 +22,10 @@ import org.springframework.core.AttributeAccessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
+// 用于描述一个bean，包括属性方法等，类似于java中的class
+// BeanMetadataElement：该接口只有一个方法 getSource，该方法返回 Bean 的来源。
+// AttributeAccessor：该接口主要规范了问任意对象元数据的方法。具体的实现则是 AttributeAccessorSupport，这些数据采用
+// LinkedHashMap 进行存储
 /**
  * A BeanDefinition describes a bean instance, which has property values,
  * constructor argument values, and further information supplied by
@@ -60,6 +64,11 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	String SCOPE_PROTOTYPE = ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 
+	// ROLE_xxx 用来描述一个 Bean 的角色，
+	// ROLE_APPLICATION 表示这个 Bean 是用户自己定义的 Bean；
+	// ROLE_SUPPORT 表示这个 Bean 是某些复杂配置的支撑部分；
+	// ROLE_INFRASTRUCTURE 表示这是一个 Spring 内部的 Bean，
+	// 通过 setRole/getRole 可以修改。
 	/**
 	 * Role hint indicating that a {@code BeanDefinition} is a major part
 	 * of the application. Typically corresponds to a user-defined bean.
@@ -90,6 +99,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// 设置父 Bean，这里涉及到 bean 继承，不是 java 继承
 	// 一句话就是：继承父 Bean 的配置信息而已
+	// 对应xml中的<bean parent="">
 	/**
 	 * Set the name of the parent definition of this bean definition, if any.
 	 */
@@ -102,6 +112,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	String getParentName();
 
 	// 设置 Bean 的类名称，将来是要通过反射来生成实例的
+	// 对应于xml的<bean class="">
 	/**
 	 * Specify the bean class name of this bean definition.
 	 * <p>The class name can be modified during bean factory post-processing,
@@ -141,6 +152,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getScope();
 
+	// 对应xml <bean lazy-init="">
 	/**
 	 * Set whether this bean should be lazily initialized.
 	 * <p>If {@code false}, the bean will get instantiated on startup by bean
@@ -155,7 +167,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	boolean isLazyInit();
 
 	// 设置该 Bean 依赖的所有的 Bean，注意，这里的依赖不是指属性依赖(如 @Autowire 标记的)，
-	// 是 depends-on="" 属性设置的值。depends-on保证依赖的bean在当前bean之前初始化，在当前bean之后再销毁。依赖不可以闭环
+	// 是 <bean depends-on=""> 属性设置的值。depends-on保证依赖的bean在当前bean之前初始化，在当前bean之后再销毁。依赖不可以闭环
 	// 这个依赖是间接的依赖，不是autowire这样的直接依赖。比如发布监听中，监听的一方想要确保接受所有信息，需要先初始化。
 	// 即便被依赖的bean上面有@Lazy，@DependsOn一样可以让其先加载，权重较高
 	/**
@@ -172,6 +184,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// 设置该 Bean 是否可以注入到其他 Bean 中，只对根据类型注入有效，
 	// 如果根据名称注入，即使这边设置了 false 也没用，一样会注入
+	// 对应xml <bean autowire-candidate="">
 	/**
 	 * Set whether this bean is a candidate for getting autowired into some other bean.
 	 * <p>Note that this flag is designed to only affect type-based autowiring.
@@ -187,6 +200,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	boolean isAutowireCandidate();
 
 	// 同一接口的多个实现，如果不指定名字的话，Spring 会优先选择设置 primary 为 true 的 bean
+	// 对应xml <bean primary="">
 	/**
 	 * Set whether this bean is a primary autowire candidate.
 	 * <p>If this value is {@code true} for exactly one bean among multiple
@@ -199,6 +213,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	boolean isPrimary();
 
+	// 设置工厂方法的bean，和setFactoryMethodName成对出现，有些实例不是用反射生成的，而是用工厂模式生成的
+	// 对应xml <bean factory-bean="">
 	/**
 	 * Specify the factory bean to use, if any.
 	 * This the name of the bean to call the specified factory method on.
@@ -212,6 +228,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getFactoryBeanName();
 
+	// 与 setFactoryBeanName 成对出现，有些实例不是用反射生成的，而是用工厂模式生成的
+	// 对应xml <bean factory-method="">
 	/**
 	 * Specify a factory method, if any. This method will be invoked with
 	 * constructor arguments, or with no arguments if none are specified.
@@ -228,6 +246,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	@Nullable
 	String getFactoryMethodName();
 
+	// 返回此 bean 的构造函数参数值
 	/**
 	 * Return the constructor argument values for this bean.
 	 * <p>The returned instance can be modified during bean factory post-processing.
@@ -346,6 +365,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 */
 	boolean isPrototype();
 
+	// 如果这个 Bean 是被设置为 abstract，那么不能实例化，
+	// 常用于作为 父bean 用于继承，其实也很少用
 	/**
 	 * Return whether this bean is "abstract", that is, not meant to be instantiated.
 	 */
