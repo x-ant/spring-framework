@@ -58,9 +58,9 @@ final class PostProcessorRegistrationDelegate {
 	 *     1、spring内置的---在这个方法之前它就被封装成了bd，并且put到了bdmap中
 	 *     		这种内置的如果没有被封装成bd--没有put到bdmap，就不会变成bean，就没法执行
 	 *     2、程序员提供
+	 *     	    实现了Ordered接口的类(优先执行)
 	 *     		通过扫描出来，比如写了@Component（bd bdmap bean 再执行一次，这个再次的意思是相对于内置的bean）
 	 *     		通过api提供（直接调用这个方法然后传入list）或者ac.addBeanFactoryPostProcessor()
-	 *     3、实现了Ordered接口的类
 	 * }
 	 * 所有实现类的层级关系{
 	 *     1、直接实现了BeanFactoryPostProcessors
@@ -75,6 +75,8 @@ final class PostProcessorRegistrationDelegate {
 	 * 也就是说内置的一定在这个方法之前就存在于bdmap
 	 * 但是自定义的bean在这个方法前没有，最终也可以执行，因为内置的bean执行时会完成扫描，
 	 * 扫描的动作就是这些内置的bean完成的，所以需要先把内置bean实例化，然后把自定义的bean，扫描、放入bdmap、执行PostProcessors等
+	 *
+	 * 整个流程中始终保证了BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor
 	 *
 	 * @param beanFactory bean工厂
 	 * @param beanFactoryPostProcessors 工厂生产完bean的后置处理
@@ -91,7 +93,10 @@ final class PostProcessorRegistrationDelegate {
 		// 正常情况下是一定成立的
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+			// 存储已经处理过的直接BeanFactoryPostProcessor的实现的java对象
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
+			// 存储已经处理过BeanDefinitionRegistryPostProcessor的实现类的java对象
+			// 和processedBeans差不多，一个存名字一个存对象
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
 			// BeanFactoryPostProcessor这个集合一般情况下等于null
@@ -103,10 +108,12 @@ final class PostProcessorRegistrationDelegate {
 					// 如我们自己implements BeanDefinitionRegistryPostProcessor并且没有加@Component
 					// 而是我们自己手动添加的ApplicationContext.addBeanFactoryPostProcessor(new TestBeanDefinitionRegistryPostProcessor());
 					// 那么在下面这句话就会执行重写的方法;
+					// 这里也保证了BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
 				else {
+					// 这里先缓存而不是先执行，就是为了保证BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor
 					regularPostProcessors.add(postProcessor);
 				}
 			}
@@ -140,7 +147,10 @@ final class PostProcessorRegistrationDelegate {
 			// region ========== 排序，汇总、调用、清除 ==========
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 调用BeanDefinitionRegistryPostProcessors的方法，子接口自己的方法
+			// 调用BeanDefinitionRegistryPostProcessors的方法，子接口自己的方法，
+			// 这一步调用了内置类ConfigurationClassPostProcessor的postProcessBeanDefinitionRegistry 完
+			// 成了bean的扫描
+			// BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 			// endregion
@@ -186,6 +196,13 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			// 上面代码先执行了BeanFactoryPostProcessor的子接口BeanDefinitionRegistryPostProcessor的所有实现类
+			// 其中最先执行了通过api直接注册的BeanDefinitionRegistryPostProcessor
+			// 然后是spring内置的 比如 ConfigurationClassPostProcessor
+			// 接着执行ConfigurationClassPostProcessor扫描出来的BeanDefinitionRegistryPostProcessor实现类，
+			// 这些实现类中最先执行Ordered接口的
+			// 最后是没有实现Ordered接口的
+			// BeanDefinitionRegistryPostProcessor全部调用完成才会执行BeanFactoryPostProcessor的实现类
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
