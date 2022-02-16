@@ -177,6 +177,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	@Nullable
 	private ConfigurableEnvironment environment;
 
+	// 这个集合的来源是程序员通过api addBeanFactoryPostProcessor调用
+	// 这个的BeanDefinitionRegistryPostProcessor调用的最早，在扫描之前
 	/** BeanFactoryPostProcessors to apply on refresh. */
 	private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 

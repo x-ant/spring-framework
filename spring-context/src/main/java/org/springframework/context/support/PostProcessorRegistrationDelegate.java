@@ -68,15 +68,22 @@ final class PostProcessorRegistrationDelegate {
 	 *     上面两种，从代码看，先执行了子类，即第二种BeanDefinitionRegistryPostProcessor
 	 *     如果想要在扫描之前加一些扩展的话，可以从这下手
 	 * }
+	 *
 	 * BeanFactoryPostProcessor这个集合一般情况下等于null
 	 * 只有程序员通过spring容器对象 手动添加的BeanFactoryPostProcessor对象这个才不为空
+	 * 这种需要自己调用一遍完整流程，步骤为：
+	 * AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext();
+	 * ac.register(App.class);
+	 * ac.addBeanFactoryPostProcessor(new XxxBeanFactoryPostProcessor());
+	 * ac.refresh();
 	 *
 	 * 在这个方法之前，spring内置的会放到bdmap中，然后通过bdmap newInstance，然后执行，
 	 * 也就是说内置的一定在这个方法之前就存在于bdmap
 	 * 但是自定义的bean在这个方法前没有，最终也可以执行，因为内置的bean执行时会完成扫描，
 	 * 扫描的动作就是这些内置的bean完成的，所以需要先把内置bean实例化，然后把自定义的bean，扫描、放入bdmap、执行PostProcessors等
 	 *
-	 * 整个流程中始终保证了BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor
+	 * 整个流程中始终保证了BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor，
+	 * 一般的集成框架实现BeanDefinitionRegistryPostProcessor都是为了完成自定义的扫描
 	 *
 	 * @param beanFactory bean工厂
 	 * @param beanFactoryPostProcessors 工厂生产完bean的后置处理
@@ -137,7 +144,8 @@ final class PostProcessorRegistrationDelegate {
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
-					// 参数中的getBean会放入单例池，工厂才有放入单例池这一说，所以实现类不会是xxxContext
+					// 参数中的getBean会放入单例池，工厂才有放入单例池这一说，所以实现类不会是xxxContext，这里是AbstractBeanFactory
+					// 只有在bdmap中才会被实例化
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					// 标记这里已经处理过了，这里处理的是spring内置的，下面可以判断出余下的就是程序员提供的了
 					processedBeans.add(ppName);
@@ -202,8 +210,10 @@ final class PostProcessorRegistrationDelegate {
 			// 接着执行ConfigurationClassPostProcessor扫描出来的BeanDefinitionRegistryPostProcessor实现类，
 			// 这些实现类中最先执行Ordered接口的
 			// 最后是没有实现Ordered接口的
-			// BeanDefinitionRegistryPostProcessor全部调用完成才会执行BeanFactoryPostProcessor的实现类
+			// BeanDefinitionRegistryPostProcessor全部调用完成才会执行下面的BeanFactoryPostProcessor的实现类
+			// 注意BeanDefinitionRegistryPostProcessor是BeanFactoryPostProcessor的子接口
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
+			// regularPostProcessors是程序员通过api传递的，直接实现BeanFactoryPostProcessor的实现类
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}
 
@@ -214,14 +224,22 @@ final class PostProcessorRegistrationDelegate {
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
+		// 拿到所有的BeanFactoryPostProcessor的名字,包括内置的和程序员提供(xml，注解，api)的，包括BeanDefinitionRegistryPostProcessor
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
 		// Separate between BeanFactoryPostProcessors that implement PriorityOrdered,
 		// Ordered, and the rest.
+		// 执行其余的BeanFactoryPostProcessor，即没有实现BeanDefinitionRegistryPostProcessor，
+		// 也不是addBeanFactoryPostProcessor添加的，所以最终本方法的第二个参数传递的beanFactoryPostProcessors
+		// 始终在同类型中优先执行
+		// 存储实现了PriorityOrdered的BeanFactoryPostProcessor接口的java对象
 		List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
+		// 存储实现了Ordered的BeanFactoryPostProcessor接口bean的名字
 		List<String> orderedPostProcessorNames = new ArrayList<>();
+		// 存储没有实现PriorityOrdered和Ordered的BeanFactoryPostProcessor接口bean的名字
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
+		// 除了第一个是存java对象剩下两个是名字，为了保证不同类型实例化的顺序，下面三个for循环每次实例化一种
 		for (String ppName : postProcessorNames) {
 			if (processedBeans.contains(ppName)) {
 				// skip - already processed in first phase above
