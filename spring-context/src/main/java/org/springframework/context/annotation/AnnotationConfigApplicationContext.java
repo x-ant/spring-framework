@@ -87,7 +87,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	public AnnotationConfigApplicationContext(Class<?>... componentClasses) {
 		// 回去调用父类GenericApplicationContext的无参构造方法 this.beanFactory = new DefaultListableBeanFactory()
 		this();
-		// 配置类的注册
+		// 配置类的注册，其实就是封装为bd放到bdmap中
 		register(componentClasses);
 		/**
 		 * 1、扫描
