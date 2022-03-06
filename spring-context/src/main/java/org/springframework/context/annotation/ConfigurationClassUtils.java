@@ -90,7 +90,11 @@ abstract class ConfigurationClassUtils {
 			return false;
 		}
 
+		// asm通过字节码获取注解上的数据，获取注解的配置类的元数据
 		AnnotationMetadata metadata;
+		// className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())
+		// 上面这句话判断是否bean的名字被修改过，内部类不改动的话也是相同的com.learn.start.MyApplication$Test
+		// 什么情况下是不同的？
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -122,10 +126,20 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		// 定义什么是一个配置类，同时满足以下两点
+		// 1、存在于beanDefinitionMap中
+		// 2、被@Component、@ComponentScan、@Import、@ImportResource注解或引入。或者方法中有@Bean
+
+		// 全配置类可以保证getBean方法的单例性（getBean获取的是cglib代理后的类）
+		// 半配置类有可能打破单例（getBean获取的是原始类）
+
+		// 是不是一个全配置类，通过@Configuration判断，获取@Configuration注解上的所有属性
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
+		// 如果有@Configuration并且注解中的属性proxyBeanMethods 为空和false返回true。即全配置类
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		// 有@Configuration注解proxyBeanMethods为true或者存在其它注解也是半配置类
 		else if (config != null || isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
@@ -151,11 +165,13 @@ abstract class ConfigurationClassUtils {
 	 */
 	public static boolean isConfigurationCandidate(AnnotationMetadata metadata) {
 		// Do not consider an interface or an annotation...
+		// 是接口就不是配置类
 		if (metadata.isInterface()) {
 			return false;
 		}
 
 		// Any of the typical annotations found?
+		// 属于这些固定枚举中的一个就是一个配置类
 		for (String indicator : candidateIndicators) {
 			if (metadata.isAnnotated(indicator)) {
 				return true;
@@ -163,6 +179,7 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// Finally, let's look for @Bean methods...
+		// 如果是有方法上有@Bean则是一个配置类，这个类上面可以什么都不加，但是这个类要能被扫描到
 		return hasBeanMethods(metadata);
 	}
 

@@ -31,7 +31,7 @@ public class MyApplication {
 	 */
 	public static void main(String[] args) {
 		AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(UserConfig.class);
-		User bean = ac.getBean(User.class);
+		UserConfig bean = ac.getBean(UserConfig.class);
 		System.out.println(bean);
 	}
 }

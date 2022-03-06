@@ -232,6 +232,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 */
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
+		// 生成的hashcode作为当前容器的唯一id，用作调用一次的校验
 		int registryId = System.identityHashCode(registry);
 		if (this.registriesPostProcessed.contains(registryId)) {
 			throw new IllegalStateException(
@@ -271,19 +272,39 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	/**
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
+	 *
+	 * 1、完成了扫描
+	 * 2、对配置类进行定义，完成标记
+	 * 3、对Import的处理
+	 *     3.1、ImportSelector（springboot自动装配）
+	 *     3.2、ImportBeanDefinitionRegistrar（mybatis的扩展点）
+	 *     3.3、就是一个普通类
+	 *         3.3.1、没有任何特殊注解
+	 *         3.3.2、加上了@Import（循环嵌套）
+	 *     3.4、ImportResource
+	 * 4、对于@Bean方法的处理（找出来方便后面调用，实例化的时候，这里涉及全配置类和半配置类）
+	 * 5、接口中的@Bean方法
+	 * 6、处理@PropertySource
+	 * 7、处理内部类
+	 * 8、处理父类
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
+		// 存储配置类，放在这里的才算配置类
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
+		// 所有的bdname  一般是6个，5个spring中内置的，一个提供的App.class
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-			// 判断当前的bd所描述的bean所对应的类是不是一个配置类
+			// 判断当前的bd所描述的bean所对应的类是不是一个配置类，如果有值说明这个类已经被checkConfigurationClassCandidate标记过了。
+			// 一般都是未被标记过，下面的else if执行后才会被标记。是否是一个配置类，是哪一种配置类full,lite
+			// getAttribute相当于对bd的扩展，没在bd中定义附加属性的放这个里面
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
+			// 这里才对ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE这个属性赋值
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -320,6 +341,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Parse each @Configuration class
+		// 实例化配置类解析器
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
