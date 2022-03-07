@@ -94,7 +94,7 @@ abstract class ConfigurationClassUtils {
 		AnnotationMetadata metadata;
 		// className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())
 		// 上面这句话判断是否bean的名字被修改过，内部类不改动的话也是相同的com.learn.start.MyApplication$Test
-		// 什么情况下是不同的？
+		// 什么情况下是不同的？ 被扫描出来的是bd是AnnotatedBeanDefinition直接进if
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -104,6 +104,9 @@ abstract class ConfigurationClassUtils {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
+			// spring内置的五个类，都是下面的这些范围，这里直接过滤掉返回了。但是之后如果扫描bean后还有这些类型则作为bean处理
+			// 所以这里的代码其实是为了过滤自己提供的类，spring认为自己提供的不是配置类，
+			// 但是spring不能保证使用人员实现这些类后会不会加@Component等。
 			if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass) ||
 					BeanPostProcessor.class.isAssignableFrom(beanClass) ||
 					AopInfrastructureBean.class.isAssignableFrom(beanClass) ||
