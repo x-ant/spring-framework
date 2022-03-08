@@ -50,18 +50,30 @@ final class ConfigurationClass {
 
 	private final AnnotationMetadata metadata;
 
+	/**
+	 * 配置抽象类描述的是哪一个类
+	 */
 	private final Resource resource;
 
 	@Nullable
 	private String beanName;
 
+	/**
+	 * 当前这个配置类引入了哪些类
+	 */
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+	/**
+	 * 有哪些被@Bean标注的方法
+	 */
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+	/**
+	 * 描述@Import(MapperScannerRegistrar.class)
+	 */
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 
