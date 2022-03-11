@@ -45,6 +45,7 @@ final class SimpleMetadataReader implements MetadataReader {
 
 
 	SimpleMetadataReader(Resource resource, @Nullable ClassLoader classLoader) throws IOException {
+		// 下面这行用spring自己提供的asm得到class的元数据，asm解析class显然需要的就是一个流，asm技术太多顶多会调用就行
 		SimpleAnnotationMetadataReadingVisitor visitor = new SimpleAnnotationMetadataReadingVisitor(classLoader);
 		getClassReader(resource).accept(visitor, PARSING_OPTIONS);
 		this.resource = resource;

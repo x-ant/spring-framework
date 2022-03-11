@@ -85,6 +85,8 @@ final class PostProcessorRegistrationDelegate {
 	 * 整个流程中始终保证了BeanDefinitionRegistryPostProcessor的执行优先于BeanFactoryPostProcessor，
 	 * 一般的集成框架实现BeanDefinitionRegistryPostProcessor都是为了完成自定义的扫描
 	 *
+	 * 要完成这些后置事件的调用，首先肯定要完成实例化
+	 *
 	 * @param beanFactory bean工厂
 	 * @param beanFactoryPostProcessors 工厂生产完bean的后置处理
 	 */
@@ -185,7 +187,7 @@ final class PostProcessorRegistrationDelegate {
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
-				// 实现了Ordered接口的类
+				// 其余的BeanDefinitionRegistryPostProcessor的类
 				postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 				for (String ppName : postProcessorNames) {
 					if (!processedBeans.contains(ppName)) {

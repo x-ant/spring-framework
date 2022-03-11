@@ -309,7 +309,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				}
 			}
 			// 这里才对ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE这个属性赋值
-			// 5.2 spring内置5个配置类，但是这5个都不是配置类
+			// 5.2 spring内置5个配置类，但是这5个都不是配置类，但是个人提供的属于配置类
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}

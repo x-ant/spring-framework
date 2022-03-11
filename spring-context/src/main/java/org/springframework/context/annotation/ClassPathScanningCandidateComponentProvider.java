@@ -416,8 +416,14 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
 		try {
+			// 包名转换成路径
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			// 得到下面的所有的文件 Resource实际是个流
+			// 这里为什么得到的是流，而不是用Class.formName直接得到class数组，如果用class数组就可以直接用
+			// class.isAnnotationPresent判断是否有注解
+			// 因为如果得到class，需要加载到内存会引起类的初始化static的代码也会执行，打乱用户和spring的节奏，
+			// 但是得到流然后用asm解析就不会侵入性更低。这样可以实现在扫描过程中没有其它的类会被加载到jvm中
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -426,6 +432,8 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 					logger.trace("Scanning " + resource);
 				}
 				try {
+					// 用asm解析类得到MetadataReader，它是对class的抽象
+					// getMetadataReaderFactory的到SimpleMetadataReaderFactory就行，另一个cache就所以个缓存
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
 					if (isCandidateComponent(metadataReader)) {
 						ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
