@@ -339,9 +339,11 @@ configure([rootProject] + javaProjects) { project ->
 		// Pull in the latest JUnit 5 Launcher API to ensure proper support in IDEs.
 		testRuntime("org.junit.platform:junit-platform-launcher")
 		testRuntime("org.junit.jupiter:junit-jupiter-engine")
-		testRuntime("org.apache.logging.log4j:log4j-core")
-		testRuntime("org.apache.logging.log4j:log4j-slf4j-impl")
-		testRuntime("org.apache.logging.log4j:log4j-jul")
+		// 把测试环境的og4j-slf4j-impl桥接包 具体日志log4j-cor实现注释掉，保证myapplication
+		//testRuntime("org.apache.logging.log4j:log4j-core")
+		//testRuntime("org.apache.logging.log4j:log4j-slf4j-impl")
+		// log4j-jul是jdk桥接包对应门面是commons-logging
+		//testRuntime("org.apache.logging.log4j:log4j-jul")
 		// JSR-305 only used for non-required meta-annotations
 		compileOnly("com.google.code.findbugs:jsr305")
 		testCompileOnly("com.google.code.findbugs:jsr305")

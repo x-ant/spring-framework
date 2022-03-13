@@ -1,5 +1,6 @@
 package com.learn.start;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  *
  * @author XHQ
  */
+@Slf4j
 public class MyApplication {
 
 	/**
@@ -32,6 +34,6 @@ public class MyApplication {
 	public static void main(String[] args) {
 		AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(UserConfig.class);
 		UserConfig bean = ac.getBean(UserConfig.class);
-		System.out.println(bean);
+		log.info("{}", bean);
 	}
 }

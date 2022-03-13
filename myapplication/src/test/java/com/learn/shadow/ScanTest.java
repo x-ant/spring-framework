@@ -2,7 +2,8 @@ package com.learn.shadow;
 
 import com.learn.shadow.bean.Z1;
 import com.learn.shadow.config.ShadowConfig;
-import org.junit.Test;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  *
  * @author XHQ
  */
+@Slf4j
 public class ScanTest {
 
 	/**
@@ -24,7 +26,8 @@ public class ScanTest {
 		ac.refresh();
 
 		for(String beanDefinitionName: ac.getBeanDefinitionNames()){
-			System.out.println(beanDefinitionName);
+			// 不知道为什么只有用debug才能打印出来
+			log.info("输出:{}", beanDefinitionName);
 		}
 	}
 

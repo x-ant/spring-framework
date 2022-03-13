@@ -8,17 +8,59 @@ version '5.2.19.BUILD-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
+    mavenLocal()
+    maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+    maven { url 'https://maven.aliyun.com/nexus/content/repositories/jcenter' }
+    maven { url "https://repo.spring.io/plugins-release" }
+    // 配置使用Maven的中央仓库
     mavenCentral()
+    maven { url "https://repo.spring.io/libs-spring-framework-build" }
 }
 
+// api可替换compile，api或compile关键字引用的包对于其他module来说是可见的，而implementation关键字引用的包对于其他module来说是不可见的
 dependencies {
     compile(project(":spring-beans"))
     compile(project(":spring-context"))
     compile(project(":spring-core"))
     compile(project(":spring-expression"))
-    // annotationProcessor 'org.projectlombok:lombok:1.18.8'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    // compileOnly可以让这个包在打包的时候不被包含
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.8'
+    // 想要使用Lombok，还需要使用导入注解处理器(在Maven中是默认会导入这个依赖的)
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.8'
+    // 如果只导入上述的依赖，@Data等注解已经可以正常使用了，但是想要使用@Slf4j去很方便地打印日志却并不行
+    // 会报错无法找到程序包`lombok.extern.slf4j`不存在，log.后没有方法可以选择
+    // 那么很可能就是slf4j相关的支持的jar包没导入进来导致该组件不能使用，因此需要导入日志的依赖
+    // 加上slf4j-nop.jar(只引入slf4j用的这个，啥也不输出) slf4j-simple.jar， slf4j-log4j12.jar，slf4j-jdk14.jar或
+    // logback-classic.jar中的其中一个jar包compile就行（只能是一个，多了就会有冲突）
+    // 门面已经引入过了在总的gradle中compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.32'
+    // 使用logback和slf4j效率更高
+    compile 'ch.qos.logback:logback-core:1.1.3'
+    compile 'ch.qos.logback:logback-classic:1.1.3'
+
+    // 给测试也准备一份，gradle的测试和实际的代码似乎不能共享引入的这种包
+    testCompileOnly 'org.projectlombok:lombok:1.18.8'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.8'
+
+    // 直接用根目录中的junit5，一切正常
+    // testCompile group: 'junit', name: 'junit', version: '4.12'
     // 修改gradle的编译使用idea而不是gradle，然后报java.lang.NoClassDefFoundError: org/hamcrest/SelfDescribing，
     // junit 4.11中缺少下面的依赖
-    testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+    // testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
 }
+
+// 默认 build.gradle 配置同时使用了 -Xlint:processing 和 -Werrorr 编译选项，但是 myapplication 不对注解处理器进行开发，
+// 这使得 -Xlint:processing 抛出以下警告且 -Werror 将之升级为错误。
+// 这里去掉-Xlint:processing，去掉后会详细说明是什么报错而不是error
+def commonCompilerArgs =
+            ["-Xlint:serial", "-Xlint:cast", "-Xlint:classfile", "-Xlint:dep-ann",
+                   "-Xlint:divzero", "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides",
+                   "-Xlint:path", "-Xlint:static", "-Xlint:try", "-Xlint:-options"]
+
+        compileJava.options*.compilerArgs = commonCompilerArgs 
+            ["-Xlint:varargs", "-Xlint:fallthrough", "-Xlint:rawtypes",
+                   "-Xlint:deprecation", "-Xlint:unchecked", "-Werror"]
+
+        compileTestJava.options*.compilerArgs = commonCompilerArgs 
+            ["-Xlint:-varargs", "-Xlint:-fallthrough", "-Xlint:-rawtypes",
+                   "-Xlint:-deprecation", "-Xlint:-unchecked"]
