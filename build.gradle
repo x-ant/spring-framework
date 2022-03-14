@@ -279,8 +279,14 @@ configure(allprojects) { project ->
 			// Gradle没有自己的中央仓库
 			// 先从本地maven仓库寻找依赖的jar包，存在则直接使用本地maven仓库的jar
 			mavenLocal()
-			maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
-			maven { url 'https://maven.aliyun.com/nexus/content/repositories/jcenter' }
+			// https://developer.aliyun.com/mvn/guide 阿里仓库地址
+			maven { url 'https://maven.aliyun.com/repository/public/' }
+			maven { url 'https://maven.aliyun.com/repository/spring/' }
+			maven { url 'https://maven.aliyun.com/repository/spring-plugin' }
+			maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+			maven { url 'https://maven.aliyun.com/repository/google' }
+			maven { url 'https://maven.aliyun.com/repository/grails-core' }
+			maven { url 'https://maven.aliyun.com/repository/apache-snapshots' }
 			maven { url "https://repo.spring.io/plugins-release" }
 			// 配置使用Maven的中央仓库
 			mavenCentral()
@@ -339,7 +345,7 @@ configure([rootProject] + javaProjects) { project ->
 		// Pull in the latest JUnit 5 Launcher API to ensure proper support in IDEs.
 		testRuntime("org.junit.platform:junit-platform-launcher")
 		testRuntime("org.junit.jupiter:junit-jupiter-engine")
-		// 把测试环境的og4j-slf4j-impl桥接包 具体日志log4j-cor实现注释掉，保证myapplication
+		// 把测试环境的log4j-slf4j-impl桥接包 具体日志log4j-core实现注释掉，保证myapplication
 		//testRuntime("org.apache.logging.log4j:log4j-core")
 		//testRuntime("org.apache.logging.log4j:log4j-slf4j-impl")
 		// log4j-jul是jdk桥接包对应门面是commons-logging
