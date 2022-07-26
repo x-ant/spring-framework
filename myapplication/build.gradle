@@ -14,6 +14,12 @@ dependencies {
     compile(project(":spring-core"))
     compile(project(":spring-expression"))
 
+    // 添加数据源
+    compile(project(":spring-jdbc"))
+    implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.23'
+    implementation group: 'org.mybatis', name: 'mybatis', version: '3.5.5'
+    implementation group: 'org.mybatis', name: 'mybatis-spring', version: '2.0.5'
+
     // compileOnly可以让这个包在打包的时候不被包含
     compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.8'
     // 想要使用Lombok，还需要使用导入注解处理器(在Maven中是默认会导入这个依赖的)

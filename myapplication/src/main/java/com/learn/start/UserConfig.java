@@ -34,7 +34,7 @@ public class UserConfig {
 		return new Admin();
 	}
 
-	/* 被重写成如下格式
+	/* 被重写成如下格式，在这个子类中33行的new User(),会调用下面这个方法。
 	public User user() {
 		User bean = beanFactory.getBean(User.class);
 		if (bean == null) {
