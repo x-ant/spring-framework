@@ -43,8 +43,14 @@ import org.springframework.util.ObjectUtils;
  */
 public class ConstructorArgumentValues {
 
+	/**
+	 * key对应构造方法中参数的位置，从0开始。value对应一个完整的constructor-arg标签
+	 */
 	private final Map<Integer, ValueHolder> indexedArgumentValues = new LinkedHashMap<>();
 
+	/**
+	 * List是有序的，所以只需要指定constructor-arg即可
+	 */
 	private final List<ValueHolder> genericArgumentValues = new ArrayList<>();
 
 

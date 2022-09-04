@@ -178,9 +178,30 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String factoryMethodName;
 
+	/**
+	 * 有参构造方法的参数，
+	 * 对应bean标签里的constructor-arg子标签，使用构造方法传入需要注入的参数
+	 *
+	 * 如果只有下面一行，说明实例化bean的时候使用带有一个参数的构造方法，参数值是beanClassName
+	 * bd.getConstructorArgumentValues().addGenericArgumentValue(beanClassName);
+	 * 对应标签为
+	 * <bean id="xxx" class="com.Xxx" >
+	 *     <constructor-arg value="beanClassName" />
+	 * </bean>
+	 */
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	/**
+	 * Bean中的需要注入的属性值
+	 * 对应bean标签里的property子标签，使用set方法传入需要注入的参数
+	 *
+	 * bd.getPropertyValues.add("mapperInterface", beanClassName)
+	 * 对应标签为
+	 * <bean id = "xxx" class="com.Xxx">
+	 *     <property name="mapperInterface" value="beanClassName"></property>
+	 * </bean>
+	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
