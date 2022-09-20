@@ -188,6 +188,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * <bean id="xxx" class="com.Xxx" >
 	 *     <constructor-arg value="beanClassName" />
 	 * </bean>
+	 *
+	 * 优先使用构造
 	 */
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;

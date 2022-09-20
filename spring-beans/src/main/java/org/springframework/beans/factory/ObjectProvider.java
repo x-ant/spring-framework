@@ -45,6 +45,10 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	 * managed by this factory.
 	 * <p>Allows for specifying explicit construction arguments, along the
 	 * lines of {@link BeanFactory#getBean(String, Object...)}.
+	 *
+	 * 返回指定类型的bean, 如果容器中不存在, 抛出NoSuchBeanDefinitionException异常
+	 * 如果容器中有多个此类型的bean, 抛出NoUniqueBeanDefinitionException异常
+	 *
 	 * @param args arguments to use when creating a corresponding instance
 	 * @return an instance of the bean
 	 * @throws BeansException in case of creation errors
@@ -55,6 +59,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return an instance (possibly shared or independent) of the object
 	 * managed by this factory.
+	 *
+	 * 如果指定类型的bean注册到容器中, 返回 bean 实例, 否则返回 null
+	 *
 	 * @return an instance of the bean, or {@code null} if not available
 	 * @throws BeansException in case of creation errors
 	 * @see #getObject()
@@ -65,6 +72,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return an instance (possibly shared or independent) of the object
 	 * managed by this factory.
+	 *
+	 * 如果返回对象不存在，则进行回调，回调对象由Supplier传入默认值
+	 *
 	 * @param defaultSupplier a callback for supplying a default object
 	 * if none is present in the factory
 	 * @return an instance of the bean, or the supplied default object
@@ -81,6 +91,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Consume an instance (possibly shared or independent) of the object
 	 * managed by this factory, if available.
+	 *
+	 * 消费对象的一个实例（可能是共享的或独立的），如果存在通过Consumer回调消耗(调用)目标对象。
+	 *
 	 * @param dependencyConsumer a callback for processing the target object
 	 * if available (not called otherwise)
 	 * @throws BeansException in case of creation errors
@@ -97,6 +110,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return an instance (possibly shared or independent) of the object
 	 * managed by this factory.
+	 *
+	 * 如果不可用或不唯一（没有指定primary）则返回null。否则，返回对象。
+	 *
 	 * @return an instance of the bean, or {@code null} if not available or
 	 * not unique (i.e. multiple candidates found with none marked as primary)
 	 * @throws BeansException in case of creation errors
@@ -108,6 +124,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return an instance (possibly shared or independent) of the object
 	 * managed by this factory.
+	 *
+	 * 如果不存在唯一对象，则调用Supplier的回调函数，默认值
+	 *
 	 * @param defaultSupplier a callback for supplying a default object
 	 * if no unique candidate is present in the factory
 	 * @return an instance of the bean, or the supplied default object
@@ -125,6 +144,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Consume an instance (possibly shared or independent) of the object
 	 * managed by this factory, if unique.
+	 *
+	 * 如果存在唯一对象，则消耗(调用)掉该对象
+	 *
 	 * @param dependencyConsumer a callback for processing the target object
 	 * if unique (not called otherwise)
 	 * @throws BeansException in case of creation errors
@@ -141,6 +163,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return an {@link Iterator} over all matching object instances,
 	 * without specific ordering guarantees (but typically in registration order).
+	 *
+	 * 返回符合条件的对象的Iterator，没有特殊顺序保证（一般为注册顺序）
+	 *
 	 * @since 5.1
 	 * @see #stream()
 	 */
@@ -152,6 +177,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	/**
 	 * Return a sequential {@link Stream} over all matching object instances,
 	 * without specific ordering guarantees (but typically in registration order).
+	 *
+	 * 返回符合条件对象的连续的Stream，没有特殊顺序保证（一般为注册顺序）
+	 *
 	 * @since 5.1
 	 * @see #iterator()
 	 * @see #orderedStream()
@@ -168,6 +196,9 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	 * and in case of annotation-based configuration also considering the
 	 * {@link org.springframework.core.annotation.Order} annotation,
 	 * analogous to multi-element injection points of list/array type.
+	 *
+	 * 返回符合条件对象的连续的Stream。在标注Spring应用上下文中采用@Order注解或实现Order接口的顺序
+	 *
 	 * @since 5.1
 	 * @see #stream()
 	 * @see org.springframework.core.OrderComparator
