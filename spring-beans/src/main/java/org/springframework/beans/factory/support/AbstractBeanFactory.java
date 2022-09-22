@@ -166,7 +166,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	@Nullable
 	private SecurityContextProvider securityContextProvider;
 
-	/** Map from bean name to merged RootBeanDefinition. */
+	/**
+	 * Map from bean name to merged RootBeanDefinition.
+	 *
+	 * 解析原始的bd，
+	 * 如果没有父级，直接深拷贝放入merge
+	 * 如果有父级，解析并通过父类的数据补充当前的子级bd，然后用子类bd数据覆盖父类数据，得到新bdd放入当前集合。
+	 */
 	private final Map<String, RootBeanDefinition> mergedBeanDefinitions = new ConcurrentHashMap<>(256);
 
 	/** Names of beans that have already been created at least once. */
@@ -1358,6 +1364,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				}
 				else {
 					// Child bean definition: needs to be merged with parent.
+					// 定义一个bd来接父类
 					BeanDefinition pbd;
 					try {
 						String parentBeanName = transformedBeanName(bd.getParentName());
@@ -1465,7 +1472,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 */
 	public void clearMetadataCache() {
 		this.mergedBeanDefinitions.forEach((beanName, bd) -> {
+			// 如果没有冻结则会进入if
 			if (!isBeanEligibleForMetadataCaching(beanName)) {
+				// 表明当前mergedBeanDefinitions不是最新的，需继续重写
 				bd.stale = true;
 			}
 		});

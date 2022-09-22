@@ -128,6 +128,9 @@ public interface ConfigurableListableBeanFactory
 	 * <p>Typically triggered after changes to the original bean definitions,
 	 * e.g. after applying a {@link BeanFactoryPostProcessor}. Note that metadata
 	 * for beans which have already been created at this point will be kept around.
+	 *
+	 * 用到是否被冻结的判断标识
+	 *
 	 * @since 4.2
 	 * @see #getBeanDefinition
 	 * @see #getMergedBeanDefinition
@@ -138,6 +141,12 @@ public interface ConfigurableListableBeanFactory
 	 * Freeze all bean definitions, signalling that the registered bean definitions
 	 * will not be modified or post-processed any further.
 	 * <p>This allows the factory to aggressively cache bean definition metadata.
+	 *
+	 * 在org/springframework/context/support/AbstractApplicationContext.java:890 处冻结，
+	 * 标识bd不会在被修改了，可以多多缓存了。是spring自己用的。用完自己给清空了。
+	 * 这个标记被打上之后spring没有主动修改，之后的如果要修改单例池就会清空这些bd缓存。
+	 *
+	 * 冻结之后对bd的修改不会生效。
 	 */
 	void freezeConfiguration();
 
