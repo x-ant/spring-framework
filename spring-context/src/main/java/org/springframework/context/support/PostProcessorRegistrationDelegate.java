@@ -278,6 +278,8 @@ final class PostProcessorRegistrationDelegate {
 
 		// Clear cached merged bean definitions since the post-processors might have
 		// modified the original metadata, e.g. replacing placeholders in values...
+		// 这里调用清理缓存，里面的clearByTypeCache();方法对应的缓存应该还没有值，这里应该只是为了清理bd缓存。
+		// 只有冻结才会缓存，冻结发生在之后的实例化单例bean的方法中
 		beanFactory.clearMetadataCache();
 	}
 

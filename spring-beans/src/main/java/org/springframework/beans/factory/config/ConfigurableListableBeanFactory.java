@@ -129,7 +129,8 @@ public interface ConfigurableListableBeanFactory
 	 * e.g. after applying a {@link BeanFactoryPostProcessor}. Note that metadata
 	 * for beans which have already been created at this point will be kept around.
 	 *
-	 * 用到是否被冻结的判断标识
+	 * 如果当前的bean的bd还有可能变，就说明缓存不可靠，标识为过期
+	 * 并把以 过期bd建立的缓存清除，直接全部清除而不是判断 某一个是否过期
 	 *
 	 * @since 4.2
 	 * @see #getBeanDefinition

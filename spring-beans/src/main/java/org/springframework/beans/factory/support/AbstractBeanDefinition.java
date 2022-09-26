@@ -778,6 +778,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * <p>If such a callback is set, it will override any other constructor
 	 * or factory method metadata. However, bean property population and
 	 * potential annotation-driven injection will still apply as usual.
+	 *
+	 * 使用提供的instanceSupplier创建bean中的实际class，和xml中的bean的工厂方法创建对应，替换原本的factoryMethodName
+	 *
 	 * @since 5.0
 	 * @see #setConstructorArgumentValues(ConstructorArgumentValues)
 	 * @see #setPropertyValues(MutablePropertyValues)

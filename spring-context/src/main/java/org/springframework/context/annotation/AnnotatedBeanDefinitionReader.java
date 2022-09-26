@@ -50,8 +50,14 @@ public class AnnotatedBeanDefinitionReader {
 
 	private final BeanDefinitionRegistry registry;
 
+	/**
+	 * 能判断@Component注解中的value作为bean的name
+	 */
 	private BeanNameGenerator beanNameGenerator = AnnotationBeanNameGenerator.INSTANCE;
 
+	/**
+	 * scope解析，得到bean的作用域
+	 */
 	private ScopeMetadataResolver scopeMetadataResolver = new AnnotationScopeMetadataResolver();
 
 	private ConditionEvaluator conditionEvaluator;
@@ -61,6 +67,11 @@ public class AnnotatedBeanDefinitionReader {
 	 * Create a new {@code AnnotatedBeanDefinitionReader} for the given registry.
 	 * <p>If the registry is {@link EnvironmentCapable}, e.g. is an {@code ApplicationContext},
 	 * the {@link Environment} will be inherited, otherwise a new
+	 *
+	 * 1、注解的类变成bd
+	 * 2、为这个bd生成一个name
+	 * 3、注册这个bd
+	 *
 	 * {@link StandardEnvironment} will be created and used.
 	 * @param registry the {@code BeanFactory} to load bean definitions into,
 	 * in the form of a {@code BeanDefinitionRegistry}

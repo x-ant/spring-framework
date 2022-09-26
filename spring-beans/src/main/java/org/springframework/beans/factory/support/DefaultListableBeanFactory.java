@@ -160,8 +160,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	/** Map from dependency type to corresponding autowired value. */
 	private final Map<Class<?>, Object> resolvableDependencies = new ConcurrentHashMap<>(16);
 
-	/** Map of bean definition objects, keyed by bean name. */
 	/**
+	 * Map of bean definition objects, keyed by bean name.
+	 *
 	 * 缓存扫描出来、spring内置的beanDefinition对象的k-v，key(bean的name)、value(bd对象)
 	 */
 	private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
@@ -169,32 +170,46 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	/** Map from bean name to merged BeanDefinitionHolder. */
 	private final Map<String, BeanDefinitionHolder> mergedBeanDefinitionHolders = new ConcurrentHashMap<>(256);
 
-	/** Map of singleton and non-singleton bean names, keyed by dependency type. */
 	/**
-	 * 缓存被依赖的bean，key是类型，value是名字
+	 * Map of singleton and non-singleton bean names, keyed by dependency type.
+	 *
+	 * 缓存被依赖的bean，key是类型，value是名字。A依赖(自动注入)B，则把B缓存起来。发生自动注入才会有数据，一定是实例化的时候
 	 */
 	private final Map<Class<?>, String[]> allBeanNamesByType = new ConcurrentHashMap<>(64);
 
-	/** Map of singleton-only bean names, keyed by dependency type. */
 	/**
-	 * 缓存被依赖的单例bean，key是类型，value是名字
+	 * Map of singleton-only bean names, keyed by dependency type.
+	 *
+	 * 缓存被依赖的单例bean，key是类型，value是名字。A依赖(自动注入)B，则把B缓存起来。发生自动注入才会有数据，一定是实例化的时候
 	 */
 	private final Map<Class<?>, String[]> singletonBeanNamesByType = new ConcurrentHashMap<>(64);
 
-	/** List of bean definition names, in registration order. */
 	/**
+	 * List of bean definition names, in registration order.
+	 *
 	 * 缓存所有的bean的名字，就是上面的beanDefinitionMap的keys
 	 */
 	private volatile List<String> beanDefinitionNames = new ArrayList<>(256);
 
-	/** List of names of manually registered singletons, in registration order. */
+	/**
+	 * List of names of manually registered singletons, in registration order.
+	 * 通过ac.getBeanFactory().registerSingleton()手工注册的单例bean，这种bean即便被扫描或者继承了生命周期接口
+	 * 也不会调用声明周期，就是直接放入单例bean的缓存中。
+	 * 没必要有生命周期的bean。特殊的bean主要给spring自己用。
+	 */
 	private volatile Set<String> manualSingletonNames = new LinkedHashSet<>(16);
 
 	/** Cached array of bean definition names in case of frozen configuration. */
 	@Nullable
 	private volatile String[] frozenBeanDefinitionNames;
 
-	/** Whether bean definition metadata may be cached for all beans. */
+	/**
+	 * Whether bean definition metadata may be cached for all beans.
+	 *
+	 * 标识容器中的bd不会在修改，除非专门重新创建mergebdmap，markBeanAsCreated会重建mergebdmap。
+	 * markBeanAsCreated 这个方法是为了兼容程序员非要修改bdmap？
+	 * 所以这个冻结会在该方法调用前生效。
+	 */
 	private volatile boolean configurationFrozen;
 
 
@@ -859,8 +874,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	@Override
 	public void clearMetadataCache() {
+		// bd所用缓存的处理
 		super.clearMetadataCache();
 		this.mergedBeanDefinitionHolders.clear();
+		// bean所用缓存的处理
+		// 这个缓存只有发生注入的时候才会有数据。清理bean的type-name缓存，缓存不可靠所以清除。比如新的bean被创建、变更、删除等，name相同。
 		clearByTypeCache();
 	}
 

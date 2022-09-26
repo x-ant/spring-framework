@@ -127,6 +127,11 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * <p>Default is {@link AnnotationBeanNameGenerator}.
 	 * <p>Any call to this method must occur prior to calls to {@link #register(Class...)}
 	 * and/or {@link #scan(String...)}.
+	 *
+	 * 这里的bean名字生成器对 scanner.scan()方法和reader.register()。
+	 * 这俩方法其实就是容器的 context.scan()和context.register()
+	 * 并且把当前的生成器作为@ComponentScan的名字生成器的默认值
+	 *
 	 * @see AnnotatedBeanDefinitionReader#setBeanNameGenerator
 	 * @see ClassPathBeanDefinitionScanner#setBeanNameGenerator
 	 * @see AnnotationBeanNameGenerator
@@ -135,6 +140,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
 		this.reader.setBeanNameGenerator(beanNameGenerator);
 		this.scanner.setBeanNameGenerator(beanNameGenerator);
+		// 注册当前bean名字生成器到单例中，之后会获取这个bean
+		// org/springframework/context/annotation/ConfigurationClassPostProcessor.java:351
 		getBeanFactory().registerSingleton(
 				AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR, beanNameGenerator);
 	}

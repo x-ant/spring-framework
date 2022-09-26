@@ -300,7 +300,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		// 找出所有的配置类用于解析
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-			// 判断当前的bd所描述的bean所对应的类是不是一个配置类，如果有值说明这个类已经被checkConfigurationClassCandidate标记过了。
+			// 判断当前的bd所描述的bean所对应的类是不是一个配置类，如果有值说明这个类已经被下面的checkConfigurationClassCandidate标记过了。
 			// 一般都是未被标记过，下面的else if执行后才会被标记。是否是一个配置类，是哪一种配置类full,lite
 			// getAttribute相当于对bd的扩展，没在bd中定义附加属性的放这个里面
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {

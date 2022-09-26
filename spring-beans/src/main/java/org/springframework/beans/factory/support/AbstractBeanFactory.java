@@ -1468,13 +1468,19 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * <p>Typically triggered after changes to the original bean definitions,
 	 * e.g. after applying a {@code BeanFactoryPostProcessor}. Note that metadata
 	 * for beans which have already been created at this point will be kept around.
+	 *
+	 * 如果当前的bean的bd发生了变化，就说明缓存不可靠，标识为过期。
+	 *
 	 * @since 4.2
 	 */
 	public void clearMetadataCache() {
 		this.mergedBeanDefinitions.forEach((beanName, bd) -> {
-			// 如果没有冻结则会进入if
+			// 只有当前容器没有冻结 并且 当前bd没有处于(即将创建或者已经创建的状态)才会标识当前bd是否过期。
+			// 被冻结或者已经被创建，就算使用bdmap更新了mergebdmap也没用。
+			// 冻结是对整个容器操作，stale是对单个操作，都是表明 即将或者已经创建。 改了也没用。
+			// 特别是冻结，说明整个容器中的单例bean都在即将或者已经实例化。
 			if (!isBeanEligibleForMetadataCaching(beanName)) {
-				// 表明当前mergedBeanDefinitions不是最新的，需继续重写
+				// 表明当前mergedBeanDefinitions不是最新的，过期了
 				bd.stale = true;
 			}
 		});
