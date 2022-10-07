@@ -33,6 +33,7 @@ import org.springframework.lang.Nullable;
  */
 public interface AnnotatedBeanDefinition extends BeanDefinition {
 
+	// 注解类上的信息
 	/**
 	 * Obtain the annotation metadata (as well as basic class metadata)
 	 * for this bean definition's bean class.
@@ -42,6 +43,9 @@ public interface AnnotatedBeanDefinition extends BeanDefinition {
 
 	/**
 	 * Obtain metadata for this bean definition's factory method, if any.
+	 *
+	 * 用@Bean注解的方法上的注解信息
+	 *
 	 * @return the factory method metadata, or {@code null} if none
 	 * @since 4.1.1
 	 */

@@ -215,6 +215,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String destroyMethodName;
 
+	/**
+	 * 是否强制执行初始化方法，设置为true。如果指定了方法，但是这个方法没找到就会异常
+	 */
 	private boolean enforceInitMethod = true;
 
 	private boolean enforceDestroyMethod = true;
@@ -226,6 +229,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private String description;
 
+	/**
+	 * 当前bean是从哪个 xml 中生成的。
+	 */
 	@Nullable
 	private Resource resource;
 

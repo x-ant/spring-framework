@@ -215,6 +215,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	// 设置工厂方法的bean，和setFactoryMethodName成对出现，有些实例不是用反射生成的，而是用工厂模式生成的
 	// 对应xml <bean factory-bean="">
+	// 注解@Bean就是这个，@Bean注解所在的类是工厂，@Bean指明工厂的方法。
 	/**
 	 * Specify the factory bean to use, if any.
 	 * This the name of the bean to call the specified factory method on.
@@ -285,6 +286,14 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	/**
 	 * Return the name of the initializer method.
+	 *
+	 * 对应xml标签中的initMethod 指定的初始化方法。
+	 *
+	 * 与实现 InitializingBean 接口不同，实现这个接口名称固定，不需要记录
+	 * 与用 注解 @PostConstruct 标注的不同，注解标注的记录在 RootBeanDefinition的 externallyManagedInitMethods 中
+	 *
+	 * Constructor > @PostConstruct > InitializingBean > initMethod
+	 *
 	 * @since 5.1
 	 */
 	@Nullable

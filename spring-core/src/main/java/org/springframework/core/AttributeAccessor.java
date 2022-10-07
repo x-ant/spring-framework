@@ -27,6 +27,7 @@ import org.springframework.lang.Nullable;
  */
 public interface AttributeAccessor {
 
+	// 设置属性，时机被BeanDefinition实现的时候作为，bd的额外属性。而不是像scope这样固定的属性。
 	/**
 	 * Set the attribute defined by {@code name} to the supplied {@code value}.
 	 * If {@code value} is {@code null}, the attribute is {@link #removeAttribute removed}.
