@@ -49,6 +49,9 @@ abstract class AnnotationsScanner {
 	private static final Method[] NO_METHODS = {};
 
 
+	/**
+	 * 可以获取到的注解的元素，和其对应的注解
+	 */
 	private static final Map<AnnotatedElement, Annotation[]> declaredAnnotationCache =
 			new ConcurrentReferenceHashMap<>(256);
 
@@ -451,6 +454,8 @@ abstract class AnnotationsScanner {
 			cached = true;
 		}
 		else {
+			// 返回此元素上直接存在的注释。此方法忽略继承的注释。如果此元素上没有直接存在注释，则返回值为长度为 0 的数组。
+			// 此方法的调用者可以自由修改返回的数组；不会影响返回给其他调用者的数组。
 			annotations = source.getDeclaredAnnotations();
 			if (annotations.length != 0) {
 				boolean allIgnored = true;
@@ -499,6 +504,8 @@ abstract class AnnotationsScanner {
 			return hasPlainJavaAnnotationsOnly((Class<?>) annotatedElement);
 		}
 		else if (annotatedElement instanceof Member) {
+			// Member中得getDeclaringClass 获取当前成员(方法、变量)或构造方法，在哪个类中声明。
+			// 使用自定义类User.getMethods()获取方法，会发现wait等方法对应得类是java.lang.Object
 			return hasPlainJavaAnnotationsOnly(((Member) annotatedElement).getDeclaringClass());
 		}
 		else {

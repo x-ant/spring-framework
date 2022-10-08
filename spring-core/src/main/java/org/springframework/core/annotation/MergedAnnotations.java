@@ -449,6 +449,7 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 		 */
 		DIRECT,
 
+		// 查找所有直接声明的注解以及任何@Inherited超类注解，只有类有效。接口方法无效。
 		/**
 		 * Find all directly declared annotations as well as any
 		 * {@link Inherited @Inherited} superclass annotations. This strategy
