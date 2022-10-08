@@ -65,6 +65,7 @@ public class StandardAnnotationMetadata extends StandardClassMetadata implements
 		this(introspectedClass, false);
 	}
 
+	// 返回的类型有能力获取父级的注解
 	/**
 	 * Create a new {@link StandardAnnotationMetadata} wrapper for the given Class,
 	 * providing the option to return any nested annotations or annotation arrays in the

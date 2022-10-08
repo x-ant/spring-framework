@@ -240,6 +240,7 @@ final class AttributeMethods {
 	}
 
 
+	// 获取属性方法，并放入缓存。不包括继承的。
 	/**
 	 * Get the attribute methods for the given annotation type.
 	 * @param annotationType the annotation type
@@ -253,7 +254,7 @@ final class AttributeMethods {
 	}
 
 	/**
-	 * 得到当前注解的所有属性方法，然后缓存
+	 * 得到当前注解的所有属性方法，然后缓存。不包括继承
 	 *
 	 * @param annotationType 注解
 	 * @return 封装好的这个注解和它对应的属性方法

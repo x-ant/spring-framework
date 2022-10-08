@@ -435,6 +435,14 @@ abstract class AnnotationsScanner {
 		return null;
 	}
 
+	/**
+	 * 找到当前能被注解标注的元素上有没有对应的注解类型
+	 *
+	 * @param source         能被注解标注的元素
+	 * @param annotationType 需要找的注解类型
+	 * @param <A>            目标注解类型
+	 * @return 目标注解
+	 */
 	@SuppressWarnings("unchecked")
 	@Nullable
 	static <A extends Annotation> A getDeclaredAnnotation(AnnotatedElement source, Class<A> annotationType) {
@@ -447,6 +455,13 @@ abstract class AnnotationsScanner {
 		return null;
 	}
 
+	/**
+	 * 缓存了当前类上的注解，并缓存了注解里的属性方法
+	 *
+	 * @param source 当前元素，当前类
+	 * @param defensive 没看懂是什么
+	 * @return 类上的注解
+	 */
 	static Annotation[] getDeclaredAnnotations(AnnotatedElement source, boolean defensive) {
 		boolean cached = false;
 		Annotation[] annotations = declaredAnnotationCache.get(source);

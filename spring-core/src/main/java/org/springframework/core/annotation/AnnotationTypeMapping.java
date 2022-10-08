@@ -93,6 +93,7 @@ final class AnnotationTypeMapping {
 				source != null ? source.getMetaTypes() : null,
 				annotationType);
 		this.annotation = annotation;
+		// 当前注解的属性方法，不包括继承的来的。
 		this.attributes = AttributeMethods.forAnnotationType(annotationType);
 		this.mirrorSets = new MirrorSets();
 		this.aliasMappings = filledIntArray(this.attributes.size());
@@ -117,12 +118,19 @@ final class AnnotationTypeMapping {
 		return Collections.unmodifiableList(merged);
 	}
 
+	/**
+	 * 处理AliasFor注解的逻辑
+	 *
+	 * @return
+	 */
 	private Map<Method, List<Method>> resolveAliasedForTargets() {
 		Map<Method, List<Method>> aliasedBy = new HashMap<>();
 		for (int i = 0; i < this.attributes.size(); i++) {
 			Method attribute = this.attributes.get(i);
+			// 找到当前方法属性上的AliasFor注解实例
 			AliasFor aliasFor = AnnotationsScanner.getDeclaredAnnotation(attribute, AliasFor.class);
 			if (aliasFor != null) {
+				// 传入当前的属性方法实例
 				Method target = resolveAliasTarget(attribute, aliasFor);
 				aliasedBy.computeIfAbsent(target, key -> new ArrayList<>()).add(attribute);
 			}
@@ -130,10 +138,25 @@ final class AnnotationTypeMapping {
 		return Collections.unmodifiableMap(aliasedBy);
 	}
 
+	/**
+	 *
+	 *
+	 * @param attribute
+	 * @param aliasFor
+	 * @return
+	 */
 	private Method resolveAliasTarget(Method attribute, AliasFor aliasFor) {
 		return resolveAliasTarget(attribute, aliasFor, true);
 	}
 
+	/**
+	 *
+	 *
+	 * @param attribute 当前注解上的属性方法
+	 * @param aliasFor 属性方法上的AliasFor注解
+	 * @param checkAliasPair
+	 * @return
+	 */
 	private Method resolveAliasTarget(Method attribute, AliasFor aliasFor, boolean checkAliasPair) {
 		if (StringUtils.hasText(aliasFor.value()) && StringUtils.hasText(aliasFor.attribute())) {
 			throw new AnnotationConfigurationException(String.format(

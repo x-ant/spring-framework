@@ -534,15 +534,16 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Invoke factory processors registered as beans in the context.
 				/**
-				 * 完成bean的扫描和注册
+				 * 完成bean的扫描和注册，这里操作的目标是找到所有的bd
 				 * 1、扫描--class--bd对象 put到bdMap中
 				 * 2、执行beanFactoryPostProcessor--
-				 * 3、放入单例池
+				 * 3、配置类 需要调用所以会实例化 放入单例池
 				 *
  				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// 添加 扫描到的实现了 BeanPostProcessor 的bd到 addBeanPostProcessor 中，原本里面也有几个默认的
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
