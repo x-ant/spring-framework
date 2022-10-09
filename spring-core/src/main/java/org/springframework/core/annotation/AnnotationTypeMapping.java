@@ -49,6 +49,9 @@ final class AnnotationTypeMapping {
 	private static final MirrorSet[] EMPTY_MIRROR_SETS = new MirrorSet[0];
 
 
+	/**
+	 * 没懂这个source的意思
+	 */
 	@Nullable
 	private final AnnotationTypeMapping source;
 
@@ -63,6 +66,9 @@ final class AnnotationTypeMapping {
 	@Nullable
 	private final Annotation annotation;
 
+	/**
+	 * 注解和其声明的属性方法的封装
+	 */
 	private final AttributeMethods attributes;
 
 	private final MirrorSets mirrorSets;
@@ -75,6 +81,9 @@ final class AnnotationTypeMapping {
 
 	private final AnnotationTypeMapping[] annotationValueSource;
 
+	/**
+	 * key为被覆盖的属性方法，value是用于覆盖的属性方法 的map
+	 */
 	private final Map<Method, List<Method>> aliasedBy;
 
 	private final boolean synthesizable;
@@ -93,7 +102,7 @@ final class AnnotationTypeMapping {
 				source != null ? source.getMetaTypes() : null,
 				annotationType);
 		this.annotation = annotation;
-		// 当前注解的属性方法，不包括继承的来的。
+		// 注解、注解声明的属性方法的包装类
 		this.attributes = AttributeMethods.forAnnotationType(annotationType);
 		this.mirrorSets = new MirrorSets();
 		this.aliasMappings = filledIntArray(this.attributes.size());
@@ -119,18 +128,20 @@ final class AnnotationTypeMapping {
 	}
 
 	/**
-	 * 处理AliasFor注解的逻辑
+	 * 使用当前注解中的属性方法集合 attributes 解析这些属性方法上的AliasFor注解
+	 * 最终得到，key为被覆盖的属性方法，value是用于覆盖的属性方法 的map
 	 *
-	 * @return
+	 * @return key为被覆盖的属性方法，value是用于覆盖的属性方法 的map
 	 */
 	private Map<Method, List<Method>> resolveAliasedForTargets() {
+		// key是被覆盖的属性方法，value是用于覆盖的属性方法列表，一个key可以被多个value覆盖
 		Map<Method, List<Method>> aliasedBy = new HashMap<>();
 		for (int i = 0; i < this.attributes.size(); i++) {
 			Method attribute = this.attributes.get(i);
 			// 找到当前方法属性上的AliasFor注解实例
 			AliasFor aliasFor = AnnotationsScanner.getDeclaredAnnotation(attribute, AliasFor.class);
 			if (aliasFor != null) {
-				// 传入当前的属性方法实例
+				// 传入当前的属性方法实例，找到被覆盖的属性方法
 				Method target = resolveAliasTarget(attribute, aliasFor);
 				aliasedBy.computeIfAbsent(target, key -> new ArrayList<>()).add(attribute);
 			}
@@ -139,23 +150,23 @@ final class AnnotationTypeMapping {
 	}
 
 	/**
+	 * 找到当前属性方法 用于 覆盖哪一个注解的属性方法。并返回这个被覆盖的属性方法。
 	 *
-	 *
-	 * @param attribute
-	 * @param aliasFor
-	 * @return
+	 * @param attribute 当前注解上的属性方法
+	 * @param aliasFor 属性方法上的AliasFor注解
+	 * @return 被覆盖的属性方法
 	 */
 	private Method resolveAliasTarget(Method attribute, AliasFor aliasFor) {
 		return resolveAliasTarget(attribute, aliasFor, true);
 	}
 
 	/**
-	 *
+	 * 找到当前属性方法 用于 覆盖哪一个注解的属性方法。并返回这个被覆盖的属性方法。
 	 *
 	 * @param attribute 当前注解上的属性方法
 	 * @param aliasFor 属性方法上的AliasFor注解
-	 * @param checkAliasPair
-	 * @return
+	 * @param checkAliasPair 是否校验，是不是自己的属性相互覆盖
+	 * @return 被覆盖的属性方法
 	 */
 	private Method resolveAliasTarget(Method attribute, AliasFor aliasFor, boolean checkAliasPair) {
 		if (StringUtils.hasText(aliasFor.value()) && StringUtils.hasText(aliasFor.attribute())) {
@@ -165,17 +176,23 @@ final class AnnotationTypeMapping {
 					AttributeMethods.describe(attribute), aliasFor.attribute(),
 					aliasFor.value()));
 		}
+		// 拿到当前属性方法，要覆盖哪一个注解的属性方法。
 		Class<? extends Annotation> targetAnnotation = aliasFor.annotation();
 		if (targetAnnotation == Annotation.class) {
+			// 如果是默认值，则要覆盖自己的属性，给自己的属性起别名
 			targetAnnotation = this.annotationType;
 		}
+		// 获取这个属性方法上AliasFor注解的 attribute 的属性值 (作为需要处理的真正属性方法)
 		String targetAttributeName = aliasFor.attribute();
 		if (!StringUtils.hasLength(targetAttributeName)) {
+			// 如果为空 则获取这个属性方法上AliasFor注解的 value 的属性值 (作为需要处理的真正属性方法)
 			targetAttributeName = aliasFor.value();
 		}
 		if (!StringUtils.hasLength(targetAttributeName)) {
+			// 还为空，则当前属性方法的名字就是 需要处理的属性方法
 			targetAttributeName = attribute.getName();
 		}
+		// 获取需要处理的 注解的属性方法。使用
 		Method target = AttributeMethods.forAnnotationType(targetAnnotation).get(targetAttributeName);
 		if (target == null) {
 			if (targetAnnotation == this.annotationType) {
@@ -188,22 +205,29 @@ final class AnnotationTypeMapping {
 					StringUtils.capitalize(AttributeMethods.describe(attribute)),
 					AttributeMethods.describe(targetAnnotation, targetAttributeName)));
 		}
+		// 如果目标属性方法，就是当前AliasFor注解的方法。相当于注解没用到，也不是别的注解也没有别的名字
 		if (target.equals(attribute)) {
 			throw new AnnotationConfigurationException(String.format(
 					"@AliasFor declaration on %s points to itself. " +
 					"Specify 'annotation' to point to a same-named attribute on a meta-annotation.",
 					AttributeMethods.describe(attribute)));
 		}
+		// 判断，当前被注解的属性方法的返回值，和被覆盖的属性方法的返回值是否相同。
+		// 如果相同或者当前注解的返回值是 被覆盖注解返回值的组成部分（被覆盖注解的返回值是一个数组）也可以。
 		if (!isCompatibleReturnType(attribute.getReturnType(), target.getReturnType())) {
 			throw new AnnotationConfigurationException(String.format(
 					"Misconfigured aliases: %s and %s must declare the same return type.",
 					AttributeMethods.describe(attribute),
 					AttributeMethods.describe(target)));
 		}
+		// 判断当前属性方法被用于覆盖自身其它属性方法，并且判断目标方法上是否也被AliasFor注解标注
 		if (isAliasPair(target) && checkAliasPair) {
+			// 被覆盖的属性方法是否也被AliasFor注解标注
 			AliasFor targetAliasFor = target.getAnnotation(AliasFor.class);
 			if (targetAliasFor != null) {
+				// 找到被覆盖的属性方法，覆盖的是哪一个属性方法。
 				Method mirror = resolveAliasTarget(target, targetAliasFor, false);
+				// 如果不是相互覆盖就报错。
 				if (!mirror.equals(attribute)) {
 					throw new AnnotationConfigurationException(String.format(
 							"%s must be declared as an @AliasFor %s, not %s.",
@@ -215,6 +239,13 @@ final class AnnotationTypeMapping {
 		return target;
 	}
 
+	/**
+	 * 当前注解，就是声明 被覆盖属性方法的注解。
+	 * 自己的属性起了一个自己另一个属性的名字作为别名的情况。
+	 *
+	 * @param target 找到的需要覆盖的方法属性
+	 * @return 是否是自己 的方法属性 覆盖自己的 另一个方法属性
+	 */
 	private boolean isAliasPair(Method target) {
 		return (this.annotationType == target.getDeclaringClass());
 	}
@@ -225,6 +256,7 @@ final class AnnotationTypeMapping {
 
 	private void processAliases() {
 		List<Method> aliases = new ArrayList<>();
+		// attributes 这个包装类的size返回的是这个注解声明的属性方法的个数
 		for (int i = 0; i < this.attributes.size(); i++) {
 			aliases.clear();
 			aliases.add(this.attributes.get(i));
@@ -235,13 +267,20 @@ final class AnnotationTypeMapping {
 		}
 	}
 
+	/**
+	 * 获取构建 当前属性方法，和覆盖当前属性方法的属性方法的 列表
+	 *
+	 * @param aliases 看调用实际里面只有一个值，当前注解上的属性方法
+	 */
 	private void collectAliases(List<Method> aliases) {
 		AnnotationTypeMapping mapping = this;
 		while (mapping != null) {
 			int size = aliases.size();
 			for (int j = 0; j < size; j++) {
+				// 用当前注解上的属性方法在被覆盖属性方法里找的到，说明自己覆盖自己
 				List<Method> additional = mapping.aliasedBy.get(aliases.get(j));
 				if (additional != null) {
+					// 别名里就加上 用于覆盖自己的属性
 					aliases.addAll(additional);
 				}
 			}
@@ -249,6 +288,12 @@ final class AnnotationTypeMapping {
 		}
 	}
 
+	/**
+	 *
+	 *
+	 * @param attributeIndex 哪一个属性方法的索引
+	 * @param aliases 这个属性方法包括自己的所有别名
+	 */
 	private void processAliases(int attributeIndex, List<Method> aliases) {
 		int rootAttributeIndex = getFirstRootAttributeIndex(aliases);
 		AnnotationTypeMapping mapping = this;

@@ -258,7 +258,7 @@ final class AttributeMethods {
 	}
 
 
-	// 获取属性方法，并放入缓存。不包括继承的。
+	// 获取当前注解声明的属性方法，并放入缓存。不包括继承的。创建注解、注解声明的属性方法的包装类
 	/**
 	 * Get the attribute methods for the given annotation type.
 	 * @param annotationType the annotation type
@@ -296,6 +296,13 @@ final class AttributeMethods {
 		return new AttributeMethods(annotationType, attributeMethods);
 	}
 
+	/**
+	 * 判断是否是注解的属性方法，没有参数，返回值不为void
+	 * 可能有其他情况么？
+	 *
+	 * @param method 当前属性方法
+	 * @return 是否是 属性方法
+	 */
 	private static boolean isAttributeMethod(Method method) {
 		return (method.getParameterCount() == 0 && method.getReturnType() != void.class);
 	}

@@ -196,6 +196,8 @@ public @interface AliasFor {
 	@AliasFor("value")
 	String attribute() default "";
 
+	// 三个属性组成，覆盖哪一个注解的哪一个属性。属性可以用两个字段表示。优先attribute。
+	// 设置两个是为了兼容版本，其实这个注解只需要俩属性
 	/**
 	 * The type of annotation in which the aliased {@link #attribute} is declared.
 	 * <p>Defaults to {@link Annotation}, implying that the aliased attribute is
