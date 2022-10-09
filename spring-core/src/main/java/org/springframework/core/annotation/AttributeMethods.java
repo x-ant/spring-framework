@@ -55,13 +55,27 @@ final class AttributeMethods {
 
 	private final Method[] attributeMethods;
 
+	/**
+	 * 如果属性方法的返回值是一个类Class，那么这个类型有可能不存在，需要验证
+	 */
 	private final boolean[] canThrowTypeNotPresentException;
 
+	/**
+	 * 存在方法有默认值
+	 */
 	private final boolean hasDefaultValueMethod;
 
+	/**
+	 * 存在方法返回值是一个注解，或者是组合注解
+	 */
 	private final boolean hasNestedAnnotation;
 
-
+	/**
+	 * 使用 注解和其属性方法 创建 注解和属性方法的包装类
+	 *
+	 * @param annotationType   当前注解
+	 * @param attributeMethods 当前注解内的属性方法
+	 */
 	private AttributeMethods(@Nullable Class<? extends Annotation> annotationType, Method[] attributeMethods) {
 		this.annotationType = annotationType;
 		this.attributeMethods = attributeMethods;
@@ -74,6 +88,7 @@ final class AttributeMethods {
 			if (method.getDefaultValue() != null) {
 				foundDefaultValueMethod = true;
 			}
+			// getComponentType() 返回表示数组组件类型的Class 。如果此类不表示数组类，则此方法返回 null。
 			if (type.isAnnotation() || (type.isArray() && type.getComponentType().isAnnotation())) {
 				foundNestedAnnotation = true;
 			}
@@ -85,6 +100,7 @@ final class AttributeMethods {
 	}
 
 
+	// 判断是否只有一个value属性
 	/**
 	 * Determine if this instance only contains a single attribute named
 	 * {@code value}.
@@ -96,6 +112,7 @@ final class AttributeMethods {
 	}
 
 
+	// 验证所有返回类型是Class的属性方法，通过调用得到返回值来验证对应的Class是否存在。不报异常所有的都存在返回true
 	/**
 	 * Determine if values from the given annotation can be safely accessed without
 	 * causing any {@link TypeNotPresentException TypeNotPresentExceptions}.
@@ -118,6 +135,7 @@ final class AttributeMethods {
 		return true;
 	}
 
+	// 验证所有返回类型是Class的属性方法，通过调用得到返回值来验证对应的Class是否存在。有不存在的就抛异常
 	/**
 	 * Check if values from the given annotation can be safely accessed without causing
 	 * any {@link TypeNotPresentException TypeNotPresentExceptions}. In particular,

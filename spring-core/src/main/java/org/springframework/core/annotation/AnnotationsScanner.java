@@ -456,10 +456,10 @@ abstract class AnnotationsScanner {
 	}
 
 	/**
-	 * 缓存了当前类上的注解，并缓存了注解里的属性方法
+	 * 在当前类AnnotationsScanner缓存了当前类上的注解，并在AttributeMethods中缓存了注解里的属性方法
 	 *
-	 * @param source 当前元素，当前类
-	 * @param defensive 没看懂是什么
+	 * @param source    当前元素，当前类
+	 * @param defensive 为true返回克隆对象，操作不影响缓存中的数据
 	 * @return 类上的注解
 	 */
 	static Annotation[] getDeclaredAnnotations(AnnotatedElement source, boolean defensive) {
@@ -476,6 +476,10 @@ abstract class AnnotationsScanner {
 				boolean allIgnored = true;
 				for (int i = 0; i < annotations.length; i++) {
 					Annotation annotation = annotations[i];
+					// getClass获取到的是一个代理类对象，通过该对象可以获取到注解中定义的属性方法和继承Object的方法
+					// 代理类上没有注解所以拿了也是空。注解是接口，实际是代理后使用
+
+					// annotationType获取到的是注解本身（接口的Class对象），通过该接口可以获取注解上的注解和注解中声明的方法
 					if (isIgnorable(annotation.annotationType()) ||
 							!AttributeMethods.forAnnotationType(annotation.annotationType()).isValid(annotation)) {
 						annotations[i] = null;
@@ -532,12 +536,21 @@ abstract class AnnotationsScanner {
 		return (type.getName().startsWith("java.") || type == Ordered.class);
 	}
 
+	/**
+	 * 判断当前能被注解标注的元素是否没有层级关系。
+	 * 实际有层级关系的只有Class(存在继承关系)和Method(从父类继承得来)，不考虑属性
+	 *
+	 * @param source         能被注解标注的元素
+	 * @param searchStrategy 注解查找策略
+	 * @return 是否没有层级关系
+	 */
 	private static boolean isWithoutHierarchy(AnnotatedElement source, SearchStrategy searchStrategy) {
 		if (source == Object.class) {
 			return true;
 		}
 		if (source instanceof Class) {
 			Class<?> sourceClass = (Class<?>) source;
+			// 没有父类并且没有接口
 			boolean noSuperTypes = (sourceClass.getSuperclass() == Object.class &&
 					sourceClass.getInterfaces().length == 0);
 			return (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES ? noSuperTypes &&
