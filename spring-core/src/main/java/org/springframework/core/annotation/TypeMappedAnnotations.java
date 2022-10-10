@@ -284,6 +284,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 		 */
 		private static final IsPresent[] SHARED;
 		static {
+			// 常见的组合
 			SHARED = new IsPresent[4];
 			SHARED[0] = new IsPresent(RepeatableContainers.none(), AnnotationFilter.PLAIN, true);
 			SHARED[1] = new IsPresent(RepeatableContainers.none(), AnnotationFilter.PLAIN, false);
@@ -317,6 +318,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 						if (type == requiredType || type.getName().equals(requiredType)) {
 							return Boolean.TRUE;
 						}
+						// 如果是容器注解就返回其，内部的可重复注解的实例
 						Annotation[] repeatedAnnotations =
 								this.repeatableContainers.findRepeatedAnnotations(annotation);
 						if (repeatedAnnotations != null) {
@@ -357,7 +359,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 		}
 	}
 
-
+	// 生成一个MergedAnnotation 的 注解解析器
 	/**
 	 * {@link AnnotationsProcessor} that finds a single {@link MergedAnnotation}.
 	 */
@@ -379,6 +381,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 
 			this.requiredType = requiredType;
 			this.predicate = predicate;
+			// 默认使用距离最短的注解
 			this.selector = (selector != null ? selector : MergedAnnotationSelectors.nearest());
 		}
 

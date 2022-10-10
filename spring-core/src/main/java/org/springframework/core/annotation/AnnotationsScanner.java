@@ -458,6 +458,8 @@ abstract class AnnotationsScanner {
 	/**
 	 * 在当前类AnnotationsScanner缓存了当前类上的注解，并在AttributeMethods中缓存了注解里的属性方法
 	 *
+	 * 获取当前类声明的所有有效注解
+	 *
 	 * @param source    当前元素，当前类
 	 * @param defensive 为true返回克隆对象，操作不影响缓存中的数据
 	 * @return 类上的注解
@@ -537,12 +539,15 @@ abstract class AnnotationsScanner {
 	}
 
 	/**
-	 * 判断当前能被注解标注的元素是否没有层级关系。
+	 * 判断当前能被注解标注的元素是否没有层级关系。当前类是不是层级的顶级
 	 * 实际有层级关系的只有Class(存在继承关系)和Method(从父类继承得来)，不考虑属性
+	 *
+	 * 如果是Class则判断 没有父类并且没有实现接口，如果搜索策略考虑内部类则把外部类作为父级
+	 * 如果是Method则判断 method 的声明类的层级关系。
 	 *
 	 * @param source         能被注解标注的元素
 	 * @param searchStrategy 注解查找策略
-	 * @return 是否没有层级关系
+	 * @return 是否没有层级关系，是不是顶级
 	 */
 	private static boolean isWithoutHierarchy(AnnotatedElement source, SearchStrategy searchStrategy) {
 		if (source == Object.class) {
@@ -553,6 +558,8 @@ abstract class AnnotationsScanner {
 			// 没有父类并且没有接口
 			boolean noSuperTypes = (sourceClass.getSuperclass() == Object.class &&
 					sourceClass.getInterfaces().length == 0);
+			// getEnclosingClass能够获取匿名内部类对应的外部类Class对象，
+			// 而getDeclaringClass不能够获取匿名内部类对应的声明类Class对象。
 			return (searchStrategy == SearchStrategy.TYPE_HIERARCHY_AND_ENCLOSING_CLASSES ? noSuperTypes &&
 					sourceClass.getEnclosingClass() == null : noSuperTypes);
 		}
