@@ -27,6 +27,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
 
+// 封装了注解的属性方法，代表这个是哪一个注解，并且有哪些属性方法。不考虑属性方法上有没有注解。不涉及其它注解。就单指自己。
 /**
  * Provides a quick way to access the attribute methods of an {@link Annotation}
  * with consistent ordering as well as a few useful utility methods.

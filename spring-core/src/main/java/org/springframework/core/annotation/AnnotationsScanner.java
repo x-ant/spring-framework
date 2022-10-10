@@ -118,6 +118,7 @@ abstract class AnnotationsScanner {
 			SearchStrategy searchStrategy, AnnotationsProcessor<C, R> processor) {
 
 		try {
+			// 没有层级结构，自己就是顶级结构
 			if (isWithoutHierarchy(source, searchStrategy)) {
 				return processElement(context, source, processor);
 			}
@@ -425,6 +426,7 @@ abstract class AnnotationsScanner {
 			AnnotationsProcessor<C, R> processor) {
 
 		try {
+			// 处理 聚合
 			R result = processor.doWithAggregate(context, 0);
 			return (result != null ? result : processor.doWithAnnotations(
 				context, 0, source, getDeclaredAnnotations(source, false)));

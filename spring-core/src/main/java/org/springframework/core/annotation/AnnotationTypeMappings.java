@@ -81,6 +81,7 @@ final class AnnotationTypeMappings {
 	}
 
 	private void addMetaAnnotationsToQueue(Deque<AnnotationTypeMapping> queue, AnnotationTypeMapping source) {
+		// 从source.getAnnotationType()这个class中拿到其上标注的注解，拿到的是注解的实例，即代理类
 		Annotation[] metaAnnotations = AnnotationsScanner.getDeclaredAnnotations(source.getAnnotationType(), false);
 		for (Annotation metaAnnotation : metaAnnotations) {
 			if (!isMappable(source, metaAnnotation)) {
