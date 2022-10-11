@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.springframework.lang.Nullable;
 
+// 获取注解属性值
 /**
  * Strategy API for extracting a value for an annotation attribute from a given
  * source object which is typically an {@link Annotation}, {@link Map}, or

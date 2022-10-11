@@ -107,7 +107,15 @@ final class AnnotationTypeMapping {
 
 	private final Set<Method> claimedAliases = new HashSet<>();
 
-
+	/**
+	 * 构造函数。用Configuration 和 Component 表示
+	 * source和annotation 代表解析Configuration后，接着解析其上的Component注解，这俩参数才会有值。
+	 * 有层级结构才会有值，解析到注解上的注解才会有值
+	 *
+	 * @param source         被当前注解的注解
+	 * @param annotationType 当前注解类型，都传了
+	 * @param annotation     当前注解实例
+	 */
 	AnnotationTypeMapping(@Nullable AnnotationTypeMapping source,
 			Class<? extends Annotation> annotationType, @Nullable Annotation annotation) {
 
@@ -332,10 +340,11 @@ final class AnnotationTypeMapping {
 					}
 				}
 			}
-			// 记录当前属性互为别名的情况
+			// 记录当前属性互为别名(mirrorSet)的情况
 			mapping.mirrorSets.updateFrom(aliases);
-
+			// 所有有别名的属性和其别名的集合
 			mapping.claimedAliases.addAll(aliases);
+			// 是注解别的注解的注解
 			if (mapping.annotation != null) {
 				int[] resolvedMirrors = mapping.mirrorSets.resolve(null,
 						mapping.annotation, ReflectionUtils::invokeMethod);
@@ -657,6 +666,7 @@ final class AnnotationTypeMapping {
 		if (value instanceof Class[] && extractedValue instanceof String[]) {
 			return areEquivalent((Class[]) value, (String[]) extractedValue);
 		}
+		// 两个都是注解，则比较内部的属性值
 		if (value instanceof Annotation) {
 			return areEquivalent((Annotation) value, extractedValue, valueExtractor);
 		}
@@ -701,14 +711,22 @@ final class AnnotationTypeMapping {
 	}
 
 
+	// 代表一个属性
 	/**
 	 * A collection of {@link MirrorSet} instances that provides details of all
 	 * defined mirrors.
 	 */
 	class MirrorSets {
 
+		/**
+		 * assigned属性去除null得到，
+		 */
 		private MirrorSet[] mirrorSets;
 
+		/**
+		 * 位图表示，当前注解的哪些属性 是共享别名的，共享别名的列表会被标记为同个MirrorSet的实例。
+		 * 脚标代表是当前注解的哪一个方法属性
+		 */
 		private final MirrorSet[] assigned;
 
 		/**
@@ -746,6 +764,7 @@ final class AnnotationTypeMapping {
 						// 创建 mirrorSet 表示，从属性方法的出第一个外的索引开始放mirrorSet。这里像是位图
 						this.assigned[i] = mirrorSet;
 					}
+					// i 代表了几个属性方法，属性方法位置的索引
 					last = i;
 				}
 			}
@@ -800,7 +819,7 @@ final class AnnotationTypeMapping {
 			private int size;
 
 			/**
-			 * 那几个共享，属性方法的索引大于-1
+			 * 属性方法索引的列表
 			 */
 			private final int[] indexes = new int[attributes.size()];
 
@@ -810,28 +829,45 @@ final class AnnotationTypeMapping {
 			void update() {
 				this.size = 0;
 				Arrays.fill(this.indexes, -1);
+				// 遍历，存在assigned被当前变量赋值，说明是同一个属性的别名。i代表属性方法
 				for (int i = 0; i < MirrorSets.this.assigned.length; i++) {
 					if (MirrorSets.this.assigned[i] == this) {
+						// 从1开始一个一个的放，内部存属性方法 的缩影
 						this.indexes[this.size] = i;
 						this.size++;
 					}
 				}
 			}
 
+			/**
+			 * 解析并判断当前注解中 互为别名的属性。找出最后一个有值的方法属性。
+			 * 如果存在多个有值且不同，则报错。如果都是默认值或者为空 也是返回最后一个方法属性的索引。
+			 *
+			 * @param source
+			 * @param annotation
+			 * @param valueExtractor
+			 * @param <A>
+			 * @return
+			 */
 			<A> int resolve(@Nullable Object source, @Nullable A annotation, ValueExtractor valueExtractor) {
+				// 如果存在一个非空值，则会变成非-1
 				int result = -1;
 				Object lastValue = null;
+				// 遍历等同的方法属性
 				for (int i = 0; i < this.size; i++) {
 					Method attribute = attributes.get(this.indexes[i]);
+					// 拿到当前属性方法的值
 					Object value = valueExtractor.extract(attribute, annotation);
 					boolean isDefaultValue = (value == null ||
 							isEquivalentToDefaultValue(attribute, value, valueExtractor));
+					// 为空，或者等于默认值，说明当前没有赋值，或者和其它的值相等，可以不用考虑。
 					if (isDefaultValue || ObjectUtils.nullSafeEquals(lastValue, value)) {
 						if (result == -1) {
 							result = this.indexes[i];
 						}
 						continue;
 					}
+					// 同一个注解的多个同名属性，有值且不同则报错
 					if (lastValue != null && !ObjectUtils.nullSafeEquals(lastValue, value)) {
 						String on = (source != null) ? " declared on " + source : "";
 						throw new AnnotationConfigurationException(String.format(
