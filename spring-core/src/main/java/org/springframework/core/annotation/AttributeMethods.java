@@ -279,7 +279,8 @@ final class AttributeMethods {
 	 * @return 封装好的这个注解和它对应的属性方法
 	 */
 	private static AttributeMethods compute(Class<? extends Annotation> annotationType) {
-		// 返回一个包含Method对象的数组，该对象反映了此Class对象表示的类或接口的所有声明方法，
+		// getMethods是获取类中所有公共方法，包括继承自父类的。
+		// getDeclaredMethods 返回一个包含Method对象的数组，该对象反映了此Class对象表示的类或接口的所有声明方法，
 		// 包括公共、受保护、默认（包）访问和私有方法，但不包括继承方法。
 		Method[] methods = annotationType.getDeclaredMethods();
 		int size = methods.length;

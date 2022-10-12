@@ -1,5 +1,6 @@
 package com.learn.config;
 
+import com.learn.annotation.MyAnnotation;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
@@ -19,6 +20,7 @@ import javax.sql.DataSource;
 @Configuration
 @ComponentScan("com.learn")
 @MapperScan("com.learn.dao")
+@MyAnnotation
 public class MybatisConfig {
 
 	@Bean

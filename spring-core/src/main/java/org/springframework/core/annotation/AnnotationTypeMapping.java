@@ -112,7 +112,7 @@ final class AnnotationTypeMapping {
 	 * source和annotation 代表解析Configuration后，接着解析其上的Component注解，这俩参数才会有值。
 	 * 有层级结构才会有值，解析到注解上的注解才会有值
 	 *
-	 * @param source         被当前注解的注解
+	 * @param source         被当前注解标注的注解
 	 * @param annotationType 当前注解类型，都传了
 	 * @param annotation     当前注解实例
 	 */
@@ -344,7 +344,7 @@ final class AnnotationTypeMapping {
 			mapping.mirrorSets.updateFrom(aliases);
 			// 所有有别名的属性和其别名的集合
 			mapping.claimedAliases.addAll(aliases);
-			// 是注解别的注解的注解
+			// 当前注解，同时是注解别的注解的注解
 			if (mapping.annotation != null) {
 				int[] resolvedMirrors = mapping.mirrorSets.resolve(null,
 						mapping.annotation, ReflectionUtils::invokeMethod);
@@ -711,7 +711,7 @@ final class AnnotationTypeMapping {
 	}
 
 
-	// 代表一个属性
+	// 代表一个属性，内部mirrorSets每个值都是一样的，指向同一个MirrorSet
 	/**
 	 * A collection of {@link MirrorSet} instances that provides details of all
 	 * defined mirrors.
@@ -719,7 +719,7 @@ final class AnnotationTypeMapping {
 	class MirrorSets {
 
 		/**
-		 * assigned属性去除null得到，
+		 * assigned属性去除null得到，assigned都是同一个实例，这里实际只会有一个值
 		 */
 		private MirrorSet[] mirrorSets;
 
@@ -819,7 +819,7 @@ final class AnnotationTypeMapping {
 			private int size;
 
 			/**
-			 * 属性方法索引的列表
+			 * 属性方法索引的列表，从1开始一个一个的放，内部存属性方法 的索引
 			 */
 			private final int[] indexes = new int[attributes.size()];
 
@@ -832,7 +832,7 @@ final class AnnotationTypeMapping {
 				// 遍历，存在assigned被当前变量赋值，说明是同一个属性的别名。i代表属性方法
 				for (int i = 0; i < MirrorSets.this.assigned.length; i++) {
 					if (MirrorSets.this.assigned[i] == this) {
-						// 从1开始一个一个的放，内部存属性方法 的缩影
+						// 从1开始一个一个的放，内部存属性方法 的索引
 						this.indexes[this.size] = i;
 						this.size++;
 					}
@@ -843,11 +843,11 @@ final class AnnotationTypeMapping {
 			 * 解析并判断当前注解中 互为别名的属性。找出最后一个有值的方法属性。
 			 * 如果存在多个有值且不同，则报错。如果都是默认值或者为空 也是返回最后一个方法属性的索引。
 			 *
-			 * @param source
-			 * @param annotation
-			 * @param valueExtractor
-			 * @param <A>
-			 * @return
+			 * @param source         被注解标注的注解，和source属性是同一个意思
+			 * @param annotation     当前注解实例
+			 * @param valueExtractor 回调对象，用于获取属性方法的值
+			 * @param <A>            注解的类型
+			 * @return 解析注解得到 当前注解内部 最终用于获取 互为别名的 属性值的属性方法的索引
 			 */
 			<A> int resolve(@Nullable Object source, @Nullable A annotation, ValueExtractor valueExtractor) {
 				// 如果存在一个非空值，则会变成非-1
