@@ -34,4 +34,10 @@ public @interface ContextConfiguration {
 	@AliasFor("value")
 	String[] locations() default {};
 
+	@AliasFor("name")
+	String[] shortname() default {};
+
+	@AliasFor("shortname")
+	String[] name() default {};
+
 }

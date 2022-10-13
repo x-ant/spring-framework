@@ -72,6 +72,10 @@ final class AnnotationTypeMapping {
 
 	private final List<Class<? extends Annotation>> metaTypes;
 
+	/**
+	 * 看实际调用发现 source和annotation 代表解析Configuration后，接着解析其上的Component注解，这俩参数才会有值。
+	 * 是当前注解的实例，且当前注解 已经标注到 其它注解上被解析
+	 */
 	@Nullable
 	private final Annotation annotation;
 
@@ -293,6 +297,7 @@ final class AnnotationTypeMapping {
 			collectAliases(aliases);
 			// 大于1说明，起码是一个自己和一个@AliasFor
 			if (aliases.size() > 1) {
+				// 针对当前属性i，解析@AliasFor确定当前属性要到哪一个属性中取值
 				processAliases(i, aliases);
 			}
 		}
@@ -322,7 +327,7 @@ final class AnnotationTypeMapping {
 	}
 
 	/**
-	 *
+	 * 针对当前属性i，解析@AliasFor确定当前属性要到哪一个属性中取值
 	 *
 	 * @param attributeIndex 哪一个属性方法的索引
 	 * @param aliases 这个属性方法包括自己的所有别名
@@ -335,12 +340,12 @@ final class AnnotationTypeMapping {
 				for (int i = 0; i < mapping.attributes.size(); i++) {
 					// 解析时从下到上的过程，Configuration到Component，所以这里代表当前注解Component中的属性被覆盖了。
 					if (aliases.contains(mapping.attributes.get(i))) {
-						// 记录当前注解中被覆盖的属性方法的索引
+						// 记录当前注解中被 互为别名的属性，位图法都改为指向 同名中最小方法属性。其余为-1
 						mapping.aliasMappings[i] = rootAttributeIndex;
 					}
 				}
 			}
-			// 记录当前属性互为别名(mirrorSet)的情况
+			// 记录当前注解的当前属性互为别名(mirrorSet)的情况
 			mapping.mirrorSets.updateFrom(aliases);
 			// 所有有别名的属性和其别名的集合
 			mapping.claimedAliases.addAll(aliases);
@@ -359,6 +364,12 @@ final class AnnotationTypeMapping {
 		}
 	}
 
+	/**
+	 * 获取索引最小的 当前同名属性方法
+	 *
+	 * @param aliases 同名属性方法
+	 * @return 索引
+	 */
 	private int getFirstRootAttributeIndex(Collection<Method> aliases) {
 		AttributeMethods rootAttributes = this.root.getAttributes();
 		for (int i = 0; i < rootAttributes.size(); i++) {
@@ -711,7 +722,7 @@ final class AnnotationTypeMapping {
 	}
 
 
-	// 代表一个属性，内部mirrorSets每个值都是一样的，指向同一个MirrorSet
+	// 代表当前注解互为别名的所有属性
 	/**
 	 * A collection of {@link MirrorSet} instances that provides details of all
 	 * defined mirrors.
@@ -719,22 +730,22 @@ final class AnnotationTypeMapping {
 	class MirrorSets {
 
 		/**
-		 * assigned属性去除null得到，assigned都是同一个实例，这里实际只会有一个值
+		 * assigned属性去除null得到，assigned都是同一个实例，每一对互为别名的方法就会有一个值
 		 */
 		private MirrorSet[] mirrorSets;
 
 		/**
 		 * 位图表示，当前注解的哪些属性 是共享别名的，共享别名的列表会被标记为同个MirrorSet的实例。
 		 * 脚标代表是当前注解的哪一个方法属性
+		 * 在解析当前MirrorSets所代表的属性时，assigned表示同名属性集合包括自己
 		 */
 		private final MirrorSet[] assigned;
 
 		/**
-		 * MirrorSets 代表一个属性，在当前注解中其它别名的集合
 		 * MirrorSet 共享别名的属性
 		 */
 		MirrorSets() {
-			// 每一个 MirrorSet 代表当前注解 存在了 属性互为别名 的 所有属性
+			// 每一个 MirrorSet 代表当前注解 当前属性 存在了 属性互为别名 的 所有属性
 			this.assigned = new MirrorSet[attributes.size()];
 			this.mirrorSets = EMPTY_MIRROR_SETS;
 		}
@@ -755,7 +766,8 @@ final class AnnotationTypeMapping {
 					size++;
 					// 当前注解的属性方法中，存在第二个被AliasFor注释的方法
 					if (size > 1) {
-						// 为空才创建，所有其它别名使用同一个MirrorSet对象
+						// 为空才创建，所有其它别名使用同一个MirrorSet对象，
+						// 由于一个注解不允许2个以上互为别名，assigned最大也就是两个相同的值
 						if (mirrorSet == null) {
 							mirrorSet = new MirrorSet();
 							// 把上一个也标注了，assigned就是共性别名的属性集合的索引
@@ -791,15 +803,27 @@ final class AnnotationTypeMapping {
 			return this.assigned[attributeIndex];
 		}
 
+		/**
+		 * 得到，当前注解中的属性方法的位图表示，脚标代表方法索引，经过@AliasFor解析后内部存实际需要获取值的方法
+		 *
+		 * @param source         被注解标注的注解，和source属性是同一个意思
+		 * @param annotation     当前注解，这个有值，说明当前注解是解析别的注解得到的
+		 * @param valueExtractor 获取注解的方法，就是反射的拉姆达表达式
+		 * @return 脚标代表方法，经过@AliasFor解析后内部存实际需要获取值的方法
+		 */
 		int[] resolve(@Nullable Object source, @Nullable Object annotation, ValueExtractor valueExtractor) {
 			int[] result = new int[attributes.size()];
 			for (int i = 0; i < result.length; i++) {
+				// 默认每个方法一开始都是把自己作为目标方法
 				result[i] = i;
 			}
+			// 这里的size()表示当前注解有几对同名属性
 			for (int i = 0; i < size(); i++) {
 				MirrorSet mirrorSet = get(i);
+				// 得到 当前同名属性信息
 				int resolved = mirrorSet.resolve(source, annotation, valueExtractor);
 				for (int j = 0; j < mirrorSet.size; j++) {
+					// 位图法，同名属性的每个方法，脚标代表方法索引，内部值代表要实际取值解析的目标方法
 					result[mirrorSet.indexes[j]] = resolved;
 				}
 			}
@@ -819,7 +843,7 @@ final class AnnotationTypeMapping {
 			private int size;
 
 			/**
-			 * 属性方法索引的列表，从1开始一个一个的放，内部存属性方法 的索引
+			 * 属性方法索引的列表，从1开始一个一个的放，内部值为 同名属性方法 的索引
 			 */
 			private final int[] indexes = new int[attributes.size()];
 
