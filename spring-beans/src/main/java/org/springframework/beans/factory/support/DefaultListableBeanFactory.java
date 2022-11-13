@@ -173,6 +173,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	/**
 	 * Map of singleton and non-singleton bean names, keyed by dependency type.
 	 *
+	 * 想了想，单例的天然就可以作为HashMap的key
 	 * 缓存被依赖的bean，key是类型，value是名字。A依赖(自动注入)B，则把B缓存起来。发生自动注入才会有数据，一定是实例化的时候
 	 */
 	private final Map<Class<?>, String[]> allBeanNamesByType = new ConcurrentHashMap<>(64);

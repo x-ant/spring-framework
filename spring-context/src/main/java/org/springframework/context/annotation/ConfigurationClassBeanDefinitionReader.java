@@ -382,6 +382,8 @@ class ConfigurationClassBeanDefinitionReader {
 
 	private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
 		// 完成registerBeanDefinitions方法的回调
+		// this.registry 实际就是当前 ConfigurableListableBeanFactory
+		// metadata 是被@Import(ImportBeanDefinitionRegistrar)注解的类的元数据
 		registrars.forEach((registrar, metadata) ->
 				registrar.registerBeanDefinitions(metadata, this.registry, this.importBeanNameGenerator));
 	}

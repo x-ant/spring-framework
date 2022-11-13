@@ -194,6 +194,7 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// 最后再处理DeferredImportSelector的实现类
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -210,7 +211,7 @@ class ConfigurationClassParser {
 	protected final void parse(AnnotationMetadata metadata, String beanName) throws IOException {
 
 		// 这一行代码 解析 填充一个配置类并完成扫描
-		// 1、解析，创建了ConfigurationClass，该类用于抽象(描述)一个配置类，说明这个配置类的所有特点
+		// 1、解析，创建了ConfigurationClass，该类用于抽象(描述)一个配置类，说明这个配置类的所有特点。这里可以是全配置或半配置类。
 		// 2、processConfigurationClass处理配置类
 		processConfigurationClass(new ConfigurationClass(metadata, beanName), DEFAULT_EXCLUSION_FILTER);
 	}
@@ -280,7 +281,7 @@ class ConfigurationClassParser {
 
 		if (configClass.getMetadata().isAnnotated(Component.class.getName())) {
 			// Recursively process any member (nested) classes first
-			// 处理内部类
+			// 如果有内部类，则处理内部类中的配置类
 			processMemberClasses(configClass, sourceClass, filter);
 		}
 
@@ -616,6 +617,8 @@ class ConfigurationClassParser {
 								ParserStrategyUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class,
 										this.environment, this.resourceLoader, this.registry);
 						// 把引入的类的实例放入该配置描述类中的对应map, 被引入的类的实例为key，值为解析的当前类，这个类有可能是父类
+						// org/springframework/context/annotation/ConfigurationClassPostProcessor.java:373
+						// 完成这一轮匹配后会在处理配置类的方法 loadBeanDefinitions 中使用 这里的集合，完成回调
 						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
 					}
 					else {

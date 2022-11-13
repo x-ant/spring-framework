@@ -51,7 +51,7 @@ final class ConfigurationClass {
 	private final AnnotationMetadata metadata;
 
 	/**
-	 * 配置抽象类描述的是哪一个类
+	 * 配置抽象类描述的是哪一个配置文件
 	 */
 	private final Resource resource;
 
@@ -59,7 +59,7 @@ final class ConfigurationClass {
 	private String beanName;
 
 	/**
-	 * 当前这个配置类引入了哪些类
+	 * 我是被谁导入的
 	 */
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 

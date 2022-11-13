@@ -60,6 +60,7 @@ import org.springframework.core.type.AnnotationMetadata;
  */
 public interface ImportBeanDefinitionRegistrar {
 
+	// registry 就是当前 ConfigurableListableBeanFactory
 	/**
 	 * Register bean definitions as necessary based on the given annotation metadata of
 	 * the importing {@code @Configuration} class.

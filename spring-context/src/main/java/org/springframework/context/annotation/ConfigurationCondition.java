@@ -35,6 +35,8 @@ public interface ConfigurationCondition extends Condition {
 	ConfigurationPhase getConfigurationPhase();
 
 
+	// 实际ConfigurationPhase控制的是过滤的时机，
+	// 是在创建Configuration类的时候过滤还是在创建bean的时候过滤（也可用条件注解的生效阶段来描述）
 	/**
 	 * The various configuration phases where the condition could be evaluated.
 	 */
