@@ -194,7 +194,7 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 最后再处理DeferredImportSelector的实现类
+		// 最后再处理DeferredImportSelector的实现类，作用是什么？
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -600,6 +600,9 @@ class ConfigurationClassParser {
 							exclusionFilter = exclusionFilter.or(selectorFilter);
 						}
 						if (selector instanceof DeferredImportSelector) {
+							// 常规的流程就是 往 deferredImportSelectorHandler里维护的deferredImportSelectors List里添加回调
+							// 会在 这一轮 配置类 parse匹配完成后回调
+							// 即当前类的 ConfigurationClassParser.java:198
 							this.deferredImportSelectorHandler.handle(configClass, (DeferredImportSelector) selector);
 						}
 						else {
@@ -788,12 +791,14 @@ class ConfigurationClassParser {
 		 */
 		public void handle(ConfigurationClass configClass, DeferredImportSelector importSelector) {
 			DeferredImportSelectorHolder holder = new DeferredImportSelectorHolder(configClass, importSelector);
+			// deferredImportSelectors == null 时说明 对应的 process()方法正在执行
 			if (this.deferredImportSelectors == null) {
 				DeferredImportSelectorGroupingHandler handler = new DeferredImportSelectorGroupingHandler();
 				handler.register(holder);
 				handler.processGroupImports();
 			}
 			else {
+				// 常规流程是这个
 				this.deferredImportSelectors.add(holder);
 			}
 		}
@@ -804,6 +809,7 @@ class ConfigurationClassParser {
 			try {
 				if (deferredImports != null) {
 					DeferredImportSelectorGroupingHandler handler = new DeferredImportSelectorGroupingHandler();
+					// 对所有希望延迟加载的类进行排序
 					deferredImports.sort(DEFERRED_IMPORT_COMPARATOR);
 					deferredImports.forEach(handler::register);
 					handler.processGroupImports();

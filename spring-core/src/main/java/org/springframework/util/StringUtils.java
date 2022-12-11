@@ -1255,6 +1255,8 @@ public abstract class StringUtils {
 	}
 
 	/**
+	 * 将以英文逗号分隔的字符串转成字符串数组，没有就返回空数组
+	 *
 	 * Convert a comma delimited list (e.g., a row from a CSV file) into an
 	 * array of strings.
 	 * @param str the input {@code String} (potentially {@code null} or empty)

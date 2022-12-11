@@ -426,6 +426,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 			for (String path : StringUtils.delimitedListToStringArray(
 					javaClassPathProperty, System.getProperty("path.separator"))) {
 				try {
+					// new File("相对路径").getAbsoluteFile()，这种是取了参数System.getProperty("user.dir")拼接
 					String filePath = new File(path).getAbsolutePath();
 					int prefixIndex = filePath.indexOf(':');
 					if (prefixIndex == 1) {
