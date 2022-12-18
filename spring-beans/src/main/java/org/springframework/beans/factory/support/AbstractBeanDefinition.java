@@ -73,6 +73,10 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	/**
 	 * Constant that indicates autowiring bean properties by name.
+	 *
+	 * 这里是试出来的猜测，还没有找对饮的处理代码。
+	 * 如果是自动注入，则需要提供对应的set/construct方法。其实就变成了按照方法注入。
+	 *
 	 * @see #setAutowireMode
 	 */
 	public static final int AUTOWIRE_BY_NAME = AutowireCapableBeanFactory.AUTOWIRE_BY_NAME;
@@ -152,6 +156,10 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private Boolean lazyInit;
 
+	/**
+	 * 自动注入模型，这里说明自动注入其实不需要在类上面添加@Autowire注解就行注入
+	 * 添加了说明手动注入了
+	 */
 	private int autowireMode = AUTOWIRE_NO;
 
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;

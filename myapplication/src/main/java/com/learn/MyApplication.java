@@ -2,10 +2,7 @@ package com.learn;
 
 import com.learn.config.MybatisConfig;
 import com.learn.service.PaymentService;
-import com.learn.start.AService;
-import com.learn.start.UserConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**

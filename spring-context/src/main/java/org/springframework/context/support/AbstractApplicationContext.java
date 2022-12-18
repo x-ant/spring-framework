@@ -526,6 +526,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context.
+			// 设置了初始的postprocessor，environment
 			prepareBeanFactory(beanFactory);
 
 			try {
@@ -534,6 +535,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Invoke factory processors registered as beans in the context.
 				/**
+				 * bean工厂的后置处理器，对beanFactory组件进行设置，全局的设置
+				 * 一般的用法就是对bean工厂的扩展，并且这里完成了扫描，还没有生成bean所以这里是主要的扩展点
+				 * 生成bd，交给容器。
+				 * 我理解在这之后能操作的就是有bdmap中的数据了
+				 *
 				 * 完成bean的扫描和注册，这里操作的目标是找到所有的bd
 				 * 1、扫描--class--bd对象 put到bdMap中
 				 * 2、执行beanFactoryPostProcessor--
@@ -544,6 +550,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Register bean processors that intercept bean creation.
 				// 添加 扫描到的实现了 BeanPostProcessor 的bd到 addBeanPostProcessor 中，原本里面也有几个默认的
+				// 这里是针对bean的扩展点，回调方法里拿不到beanFactory，拿到的bean已经完成了属性注入。
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
@@ -612,6 +619,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Initialize any placeholder property sources in the context environment.
+		// 初始化上下文环境中的一些占位符。主要是改动或者添加 getEnvironment 里的值，下面一行就是验证。
 		initPropertySources();
 
 		// Validate that all properties marked as required are resolvable:
@@ -619,6 +627,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		getEnvironment().validateRequiredProperties();
 
 		// Store pre-refresh ApplicationListeners...
+		// 事件监听，事件的编程内容
 		if (this.earlyApplicationListeners == null) {
 			this.earlyApplicationListeners = new LinkedHashSet<>(this.applicationListeners);
 		}
@@ -661,10 +670,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
 		beanFactory.setBeanClassLoader(getClassLoader());
+		// el表达式解析器的创建
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// 这里的设置不耽误@Autowire的手动注入，@Autowire是不管注入模式的，一定会注入
+
+		// 后置处理器，如果这个bean是固定的这个几个aware，则回调。就是下面定义的几个忽略。
+		// 这几个忽略的意思是，如果定义了一个B 实现 A，并且B对应的bd中的注入模型是自动注入(byName,byType,byConstruct，如果
+		// 是自动注入，则需要提供对应的set方法，或者construct方法）这时忽略B中所有重写的A的set/construct方法，不进行注入。
+		// 具体这里想表示的就是 A实现ApplicationContextAware，重写的setApplicationContext被忽略。A中定义的等待被注入
+		// 的applicationContext变量不会被赋值。不太清楚场景，能想到的解释是，一个类自动注入的时候，程序员提供的set方法才是明确
+		// 需要注入的地方。迫不得已继承的接口中的set方法不应该影响到程序员？
+		//
+		// 与beanFactory.ignoreDependencyType()的区别。A的注入模型是B，并且有setB方法注入B，B被添加了。则A拿不到。
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
@@ -675,6 +695,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
+		// BeanFactory.class, beanFactory 表示将来注入BeanFactory类型的依赖，就注入这个beanFactory实例
+		// BeanFactory的实现太多了，这里就确定了，就用这个。
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);
@@ -684,6 +706,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
+		// 静态织入，没有用过
 		if (beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));
 			// Set a temporary ClassLoader for type matching.
@@ -691,6 +714,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Register default environment beans.
+		// 把环境变量放入单例
 		if (!beanFactory.containsLocalBean(ENVIRONMENT_BEAN_NAME)) {
 			beanFactory.registerSingleton(ENVIRONMENT_BEAN_NAME, getEnvironment());
 		}
