@@ -258,6 +258,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 		// Eagerly check singleton cache for manually registered singletons.
 		/**
+		 * A B 循环依赖，A先载入，A这里拿不到B，走else 最终getBean(B)，
+		 * B(getBean(A))可以从三级缓存中拿到A，走if返回。完成B对A的引用。
+		 *
 		 * 1、为了循环依赖
 		 * 2、验证当前对象是不是存在于容器中
 		 */
@@ -277,6 +280,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					logger.trace("Returning cached instance of singleton bean '" + beanName + "'");
 				}
 			}
+			// 这里的工厂处理还没看明白
 			bean = getObjectForBeanInstance(sharedInstance, name, beanName, null);
 		}
 
@@ -291,6 +295,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			}
 
 			// Check if bean definition exists in this factory.
+			// 有父级的工厂，并且当前工厂中不存在这个bean，则进入。实现两级工厂的隔离和个性处理。
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
@@ -321,6 +326,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
+				// 保证当前bean所依赖的bean已经被初始化。
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
@@ -346,7 +352,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					 */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
-							// 真的完成java对象的创建，走bean的生命周期
+							// 真的完成java对象的创建，走bean的生命周期，这里返回的就是一个完整的bean了
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {

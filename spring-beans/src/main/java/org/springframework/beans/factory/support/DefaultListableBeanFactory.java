@@ -921,6 +921,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
 			/**
+			 * Merge的意思是，如果一个bd B继承另一个bd A，实际实现时B只有parent，里面的属性还没有从A中拷贝。这里就是拷贝的动作。
 			 * 在这里打条件断点，判断要观察的bean
 			 * 1、通过beanName作为key，从mergedDeanDefinitionMap中得到一个bd
 			 */
@@ -1283,6 +1284,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
 					descriptor, requestingBeanName);
 			if (result == null) {
+				// 获取被注入的bean
 				result = doResolveDependency(descriptor, requestingBeanName, autowiredBeanNames, typeConverter);
 			}
 			return result;
@@ -1362,7 +1364,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (autowiredBeanNames != null) {
 				autowiredBeanNames.add(autowiredBeanName);
 			}
+			// 被注入的是一个类，则获取
 			if (instanceCandidate instanceof Class) {
+				// 实际就是getBean()
 				instanceCandidate = descriptor.resolveCandidate(autowiredBeanName, type, this);
 			}
 			Object result = instanceCandidate;

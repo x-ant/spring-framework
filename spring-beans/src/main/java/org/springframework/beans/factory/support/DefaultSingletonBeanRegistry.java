@@ -74,13 +74,25 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private static final int SUPPRESSED_EXCEPTIONS_LIMIT = 100;
 
 
-	/** Cache of singleton objects: bean name to bean instance. */
+	/**
+	 * Cache of singleton objects: bean name to bean instance.
+	 *
+	 * 一级缓存，初始化完成的单例bean
+	 */
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
-	/** Cache of singleton factories: bean name to ObjectFactory. */
+	/**
+	 * Cache of singleton factories: bean name to ObjectFactory.
+	 *
+	 * 三级缓存，工厂对象
+	 */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
-	/** Cache of early singleton objects: bean name to bean instance. */
+	/**
+	 * Cache of early singleton objects: bean name to bean instance.
+	 *
+	 * 二级缓存，存放实例化后没有初始化的原始bean，三个缓存中对象互斥
+	 */
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
 	/** Set of registered singletons, containing the bean names in registration order. */
@@ -131,6 +143,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/**
 	 * Add the given singleton object to the singleton cache of this factory.
 	 * <p>To be called for eager registration of singletons.
+	 *
+	 * 放入单例池，从三个缓存中移除，从二级缓存中移除。
+	 *
+	 * 使用有序set保存单例bean的名称
+	 *
 	 * @param beanName the name of the bean
 	 * @param singletonObject the singleton object
 	 */
@@ -173,6 +190,14 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * Return the (raw) singleton object registered under the given name.
 	 * <p>Checks already instantiated singletons and also allows for an early
 	 * reference to a currently created singleton (resolving a circular reference).
+	 *
+	 * 一级缓存有，就返回一级。
+	 * 二级缓存有，就返回二级。
+	 * 三级缓存有，就把三级缓存中的数据放到二级返回
+	 * 否则返回空
+	 *
+	 * 返回的有值的话，起码是个二级缓存对象
+	 *
 	 * @param beanName the name of the bean to look for
 	 * @param allowEarlyReference whether early references should be created or not
 	 * @return the registered singleton object, or {@code null} if none found
@@ -207,6 +232,9 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/**
 	 * Return the (raw) singleton object registered under the given name,
 	 * creating and registering a new one if none registered yet.
+	 *
+	 * 返回（原始，如果是工厂就返回工厂，而不是返回工厂内的调用）单例对象，如果没有则创建
+	 *
 	 * @param beanName the name of the bean
 	 * @param singletonFactory the ObjectFactory to lazily create the singleton
 	 * with, if necessary
@@ -238,7 +266,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
-					// 拿到传进来的lambda表达式创建一个对象
+					// 拿到传进来的lambda表达式创建一个对象，这里就是完整的对象了
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}
@@ -420,6 +448,14 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	/**
 	 * Register a dependent bean for the given bean,
 	 * to be destroyed before the given bean is destroyed.
+	 *
+	 * 为给定bean注册一个依赖bean，以便在销毁给定bean之前销毁。
+	 *
+	 * 引入关系表示 dependsOn、autowire
+	 *
+	 * dependentBeanMap set集合，记录当前bean引入了那些bean
+	 * dependenciesForBeanMap set集合，记录被引入的bean是被谁引入
+	 *
 	 * @param beanName the name of the bean
 	 * @param dependentBeanName the name of the dependent bean
 	 */

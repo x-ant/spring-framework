@@ -108,6 +108,11 @@ public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
 	 * PropertyValues instance), or {@code null} which proceeds with the existing properties
 	 * but specifically continues with a call to {@link #postProcessPropertyValues}
 	 * (requiring initialized {@code PropertyDescriptor}s for the current bean class)
+	 *
+	 * 在工厂将给定的属性值应用于给定的bean之前，对其进行处理，而不需要任何属性描述符。
+	 * 如果实现提供自定义postProcessPropertyValues实现，则应返回null（默认值），否则返回pvs。
+	 * 在该接口的未来版本中（删除了postProcessPropertyValues），默认实现将直接返回给定的pv。优先用这个
+	 *
 	 * @throws org.springframework.beans.BeansException in case of errors
 	 * @since 5.1
 	 * @see #postProcessPropertyValues
