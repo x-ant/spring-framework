@@ -168,7 +168,12 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	private static final String INIT_PARAM_DELIMITERS = ",; \t\n";
 
 
-	/** ServletContext attribute to find the WebApplicationContext in. */
+	/**
+	 * ServletContext attribute to find the WebApplicationContext in.
+	 *
+	 * 这里放的是ServletContext中的一个属性key，其值是一个WebApplicationContext，或其子类
+	 * 看ContextLoaderListener中的处理，这里的值应该是一个已经刷新好的容器
+	 */
 	@Nullable
 	private String contextAttribute;
 
@@ -558,10 +563,13 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #setContextConfigLocation
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
+		// ContextLoaderListener 加载的根容器
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
 
+		// webApplicationContext 的赋值，可以在构造方法中传入，Aware的后置处理，还有就是当前方法的返回
+		// 这里判断就是构造方法是否给传入了
 		if (this.webApplicationContext != null) {
 			// A context instance was injected at construction time -> use it
 			wac = this.webApplicationContext;
@@ -573,12 +581,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					if (cwac.getParent() == null) {
 						// The context instance was injected without an explicit parent -> set
 						// the root application context (if any; may be null) as the parent
+						// 根容器作为父级容器
 						cwac.setParent(rootContext);
 					}
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}
 		}
+		// 构造方法没有传入，则通过contextAttribute创建
 		if (wac == null) {
 			// No context instance was injected at construction time -> see if one
 			// has been registered in the servlet context. If one exists, it is assumed
@@ -586,6 +596,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// user has performed any initialization such as setting the context id
 			wac = findWebApplicationContext();
 		}
+
+		// 还有没有就根据 contextConfigLocation 的配置创建一个
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
 			wac = createWebApplicationContext(rootContext);
@@ -595,6 +607,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
+			// 容器可以是构造方法传入的一个已经刷新好的容器，或者是一个不支持刷新的容器(我理解指自定义的一些容器)。
+			// 这里就手动调用一下onRefresh方法。容器刷新好的事件也会调这个，注意这里是已经刷新好容器后的调用
+			// DispatcherServlet实现用于初始化请求中需要的组件
 			synchronized (this.onRefreshMonitor) {
 				onRefresh(wac);
 			}
@@ -602,6 +617,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 
 		if (this.publishContext) {
 			// Publish the context as a servlet context attribute.
+			// 把当前容器也作为一个servletContext中的一个属性
 			String attrName = getServletContextAttributeName();
 			getServletContext().setAttribute(attrName, wac);
 		}
@@ -649,6 +665,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(@Nullable ApplicationContext parent) {
+		// 获取默认的XmlWebApplicationContext 和 ContextLoaderListener 中配置的ContextLoader.properties一样
 		Class<?> contextClass = getContextClass();
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException(
@@ -671,6 +688,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	}
 
 	protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac) {
+		// 和ContextLoaderListener相同的处理，id里加了一个getServletName
 		if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
 			// The application context id is still set to its original default value
 			// -> assign a more useful id based on available information
@@ -698,6 +716,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		postProcessWebApplicationContext(wac);
+		// 调用刷新前的自定义方法initialize
 		applyInitializers(wac);
 		wac.refresh();
 	}

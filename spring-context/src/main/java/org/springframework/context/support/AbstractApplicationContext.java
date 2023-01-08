@@ -519,7 +519,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
-			// 准备工作，比如对系统变量的校验等等
+			// 准备工作，比如对系统变量的校验等等。active设置为true，在ContextLoaderListener调用的时候有判断
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
@@ -658,6 +658,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * @see #getBeanFactory()
 	 */
 	protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+		// 可刷新 与 不可刷新 的操作不同
 		refreshBeanFactory();
 		return getBeanFactory();
 	}
@@ -1428,6 +1429,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>A subclass will either create a new bean factory and hold a reference to it,
 	 * or return a single BeanFactory instance that it holds. In the latter case, it will
 	 * usually throw an IllegalStateException if refreshing the context more than once.
+	 *
+	 * 容器刷新前的准备工作。有两个实现。
+	 * 一个代表可以重复刷新的容器AbstractRefreshableApplicationContext，关闭之前的bean工厂
+	 * 一个代表不可以重复刷相信的容器GenericApplicationContext，只能刷新一次，多次调用抛异常
+	 *
 	 * @throws BeansException if initialization of the bean factory failed
 	 * @throws IllegalStateException if already initialized and multiple refresh
 	 * attempts are not supported
