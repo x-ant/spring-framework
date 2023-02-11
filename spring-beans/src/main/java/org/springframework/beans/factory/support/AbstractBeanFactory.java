@@ -263,6 +263,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		 *
 		 * 1、为了循环依赖
 		 * 2、验证当前对象是不是存在于容器中
+		 * 3、把对应的bean从3级4拿到二级，或直接返回1、2级的数据
 		 */
 		Object sharedInstance = getSingleton(beanName);
 		/**
@@ -348,7 +349,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				// Create bean instance.
 				if (mbd.isSingleton()) {
 					/**
-					 * 实例化bean，完成bean的生命周期，放入单例池
+					 * 实例化bean，完成bean的生命周期，放入单例池，内部的方法是放入三级缓存
 					 */
 					sharedInstance = getSingleton(beanName, () -> {
 						try {

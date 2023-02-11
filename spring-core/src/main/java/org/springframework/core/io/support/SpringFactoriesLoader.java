@@ -93,6 +93,8 @@ public final class SpringFactoriesLoader {
 	 * <p>
 	 * 这里的加载逻辑也限制了，key是类，value是类，value的实例必须能够赋值给key的引用。value对应的类必须有无参构造
 	 *
+	 * springboot中在这从第一次加载的缓存里获取了 AutoConfigurationImportFilter 的实现类实例化并返回
+	 *
 	 * @param factoryType the interface or abstract class representing the factory
 	 * @param classLoader the ClassLoader to use for loading (can be {@code null} to use the default)
 	 * @throws IllegalArgumentException if any factory implementation class cannot

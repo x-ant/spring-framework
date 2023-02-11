@@ -193,7 +193,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 *
 	 * 一级缓存有，就返回一级。
 	 * 二级缓存有，就返回二级。
-	 * 三级缓存有，就把三级缓存中的数据放到二级返回
+	 * 三级缓存有，就把三级缓存中的数据放到二级返回这个二级对象
 	 * 否则返回空
 	 *
 	 * 返回的有值的话，起码是个二级缓存对象
