@@ -212,7 +212,8 @@ final class AnnotationTypeMapping {
 		this.conventionMappings = filledIntArray(this.attributes.size());
 		this.annotationValueMappings = filledIntArray(this.attributes.size());
 		this.annotationValueSource = new AnnotationTypeMapping[this.attributes.size()];
-		// key是被覆盖的属性方法，value是当前注解中用于覆盖的属性方法
+		// key是被覆盖的属性方法，value是当前注解中用于覆盖的属性方法。
+		// 同名的话，相当于有一个在key，另一个在value。不是两个都在value
 		this.aliasedBy = resolveAliasedForTargets();
 		// 初始化别名属性，为所有存在别名的属性建立MirrorSet
 		processAliases();
