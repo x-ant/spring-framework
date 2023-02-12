@@ -27,7 +27,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
 
-// 封装了注解的属性方法，代表这个是哪一个注解，并且有哪些属性方法。不考虑属性方法上有没有注解。不涉及其它注解。就单指自己。
+// 封装了一个注解的所有属性方法，代表这个是哪一个注解，并且有哪些属性方法。不考虑属性方法上有没有注解。不涉及其它注解。就单指自己。
+// 还表示，这个属性方法中是否存在有默认值的、是否有返回类型还是注解需要迭代处理的情况。只是属性获取，没有业务处理逻辑。
+// 有缓存，有类似全局工具的作用
 /**
  * Provides a quick way to access the attribute methods of an {@link Annotation}
  * with consistent ordering as well as a few useful utility methods.
@@ -39,7 +41,9 @@ final class AttributeMethods {
 
 	static final AttributeMethods NONE = new AttributeMethods(null, new Method[0]);
 
-
+	/**
+	 * 有缓存
+	 */
 	private static final Map<Class<? extends Annotation>, AttributeMethods> cache =
 			new ConcurrentReferenceHashMap<>();
 
@@ -51,6 +55,9 @@ final class AttributeMethods {
 	};
 
 
+	/**
+	 * 标识，当前封装的属性方法类，是哪一个注解的
+	 */
 	@Nullable
 	private final Class<? extends Annotation> annotationType;
 
@@ -87,13 +94,16 @@ final class AttributeMethods {
 			Method method = this.attributeMethods[i];
 			Class<?> type = method.getReturnType();
 			if (method.getDefaultValue() != null) {
+				// 是否有一个属性方法存在默认值
 				foundDefaultValueMethod = true;
 			}
 			// getComponentType() 返回表示数组组件类型的Class 。如果此类不表示数组类，则此方法返回 null。
 			if (type.isAnnotation() || (type.isArray() && type.getComponentType().isAnnotation())) {
+				// 是否有一个属性方法，属性本身是一个注解或者是一个数组类型的注解，则需要迭代解析
 				foundNestedAnnotation = true;
 			}
 			ReflectionUtils.makeAccessible(method);
+			// 可以抛出类型不存在的异常，只有这个属性方法 Class、Class[]、Enum这种的，用此类中的isValid方法验证是否有这个类
 			this.canThrowTypeNotPresentException[i] = (type == Class.class || type == Class[].class || type.isEnum());
 		}
 		this.hasDefaultValueMethod = foundDefaultValueMethod;
@@ -114,6 +124,7 @@ final class AttributeMethods {
 
 
 	// 验证所有返回类型是Class的属性方法，通过调用得到返回值来验证对应的Class是否存在。不报异常所有的都存在返回true
+	// 就是验证了当前注解是否可用
 	/**
 	 * Determine if values from the given annotation can be safely accessed without
 	 * causing any {@link TypeNotPresentException TypeNotPresentExceptions}.
@@ -260,6 +271,7 @@ final class AttributeMethods {
 
 
 	// 获取当前注解声明的属性方法，并放入缓存。不包括继承的。创建注解、注解声明的属性方法的包装类
+	// 注意这个有缓存，实际使用的。
 	/**
 	 * Get the attribute methods for the given annotation type.
 	 * @param annotationType the annotation type
@@ -269,11 +281,12 @@ final class AttributeMethods {
 		if (annotationType == null) {
 			return NONE;
 		}
+		// computeIfAbsent 先get(annotationType)如果结果为空，则传入第二个参数的拉姆达表达式中
 		return cache.computeIfAbsent(annotationType, AttributeMethods::compute);
 	}
 
 	/**
-	 * 得到当前注解的所有属性方法，然后缓存。不包括继承
+	 * 得到当前注解的所有属性方法，然后缓存。不包括继承，这个不带缓存实际干活的
 	 *
 	 * @param annotationType 注解
 	 * @return 封装好的这个注解和它对应的属性方法

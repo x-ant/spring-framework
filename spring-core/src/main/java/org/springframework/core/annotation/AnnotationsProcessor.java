@@ -61,6 +61,9 @@ interface AnnotationsProcessor<C, R> {
 	/**
 	 * Get the final result to be returned. By default this method returns
 	 * the last process result.
+	 *
+	 * 扫描后的回调，返回的对象将用于下一次扫描，当返回为空时中断扫描
+	 *
 	 * @param result the last early exit result, or {@code null} if none
 	 * @return the final result to be returned to the caller
 	 */

@@ -39,6 +39,11 @@ public interface AnnotationFilter {
 	 * {@code java.lang} and {@code org.springframework.lang} packages
 	 * and their subpackages.
 	 * <p>This is the default filter in the {@link MergedAnnotations} model.
+	 *
+	 * java.lang 包下提供的都是诸如 @Resource 或者 @Target 这样的注解，由于 java 包下的代码都是标准库，
+	 * 自定义的元注解不可能加到源码中，因此只要类属于 java 包，则我们实际上是可以认为它是不可能有符合 spring 语义的元注解的。
+	 * 而 springframework.lang 包下提供的则都是 @Nonnull 这样的注解，
+	 * 这些注解基本不可能作为有特殊业务意义的元注解使用，因此默认忽略也是合理的。
 	 */
 	AnnotationFilter PLAIN = packages("java.lang", "org.springframework.lang");
 

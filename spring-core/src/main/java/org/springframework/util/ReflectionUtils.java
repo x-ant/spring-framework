@@ -33,6 +33,8 @@ import org.springframework.lang.Nullable;
  * Simple utility class for working with the reflection API and handling
  * reflection exceptions.
  *
+ * 类反射工具，全局缓存。Class和Method，Class和Field
+ *
  * <p>Only intended for internal use.
  *
  * @author Juergen Hoeller
@@ -455,6 +457,16 @@ public abstract class ReflectionUtils {
 		return getDeclaredMethods(clazz, true);
 	}
 
+	/**
+	 * 获取并全局缓存类的getDeclaredMethods方法和接口中继承来的默认方法
+	 *
+	 * 为啥要自己的方法和接口中的默认方法归类到一起？
+	 * clazz.getInterfaces() 只能获取当前类的接口，不能获取父类实现的接口。可以理解为是同一个类中的方法。
+	 *
+	 * @param clazz
+	 * @param defensive
+	 * @return
+	 */
 	private static Method[] getDeclaredMethods(Class<?> clazz, boolean defensive) {
 		Assert.notNull(clazz, "Class must not be null");
 		Method[] result = declaredMethodsCache.get(clazz);
@@ -484,6 +496,12 @@ public abstract class ReflectionUtils {
 		return (result.length == 0 || !defensive) ? result : result.clone();
 	}
 
+	/**
+	 * 找接口里的默认方法
+	 *
+	 * @param clazz
+	 * @return
+	 */
 	@Nullable
 	private static List<Method> findConcreteMethodsOnInterfaces(Class<?> clazz) {
 		List<Method> result = null;

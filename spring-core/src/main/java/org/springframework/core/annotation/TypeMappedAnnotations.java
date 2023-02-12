@@ -35,6 +35,23 @@ import org.springframework.lang.Nullable;
  * {@link MergedAnnotations} implementation that searches for and adapts
  * annotations and meta-annotations using {@link AnnotationTypeMappings}.
  *
+ * TypeMappedAnnotations的主要功能就是搜索、操作注解，实现MergedAnnotations
+ *
+ * Spring 支持 find 和 get 开头的两类方法：
+ *
+ * get ：指从 AnnotatedElement 上寻找直接声明的注解；
+ * find：指从 AnnotatedElement 的层级结构（类或方法）上寻找存在的注解；
+ * 大部分情况下，get 开头的方法与 AnnotatedElement 本身直接提供的方法效果一致，
+ * 比较特殊的 find 开头的方法，此类方法会从AnnotatedElement 的层级结构中寻找存在的注解，关于“层级结构”，Spring 给出了一套定义：
+ *
+ * 当 AnnotatedElement 是 Class 时：层级结构指类本身，以及类和它的父类，父接口，
+ * 以及父类的父类，父类的父接口......整个继承树中的所有 Class 文件；
+ *
+ * 当 AnnotatedElement 是 Method 是：层级结构指方法本身，以及声明该方法的类它的父类，父接口，
+ * 以及父类的父类，父类的父接口......整个继承树中所有 Class 文件中，那些与搜索的 Method 具有完全相同签名的方法；
+ *
+ * 当 AnnotatedElement 不是上述两者中的一种时，它没有层级结构，搜索将仅限于 AnnotatedElement 这个对象本身；
+ *
  * @author Phillip Webb
  * @since 5.2
  */
@@ -142,10 +159,11 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 	public <A extends Annotation> MergedAnnotation<A> get(Class<A> annotationType,
 			@Nullable Predicate<? super MergedAnnotation<A>> predicate,
 			@Nullable MergedAnnotationSelector<A> selector) {
-
+		// 1、若该注解无法通过过滤，即该注解若属于 `java.lang`、`org.springframework.lang` 包，则直接返回空注解
 		if (this.annotationFilter.matches(annotationType)) {
 			return MergedAnnotation.missing();
 		}
+		// 2、使用MergedAnnotationFinder扫描并获取注解
 		MergedAnnotation<A> result = scan(annotationType,
 				new MergedAnnotationFinder<>(annotationType, predicate, selector));
 		return (result != null ? result : MergedAnnotation.missing());
@@ -234,23 +252,38 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 
 	@Nullable
 	private <C, R> R scan(C criteria, AnnotationsProcessor<C, R> processor) {
+		// a.若指定了查找的注解，则扫描这些注解以及其元注解的层级结构
 		if (this.annotations != null) {
 			R result = processor.doWithAnnotations(criteria, 0, this.source, this.annotations);
 			return processor.finish(result);
 		}
+		// b.未指定查找的注解，可能是一个类，或者方法等，则需要判断处理。则直接扫描元素以及其父类、父接口的层级结构
 		if (this.element != null && this.searchStrategy != null) {
 			return AnnotationsScanner.scan(criteria, this.element, this.searchStrategy, processor);
 		}
 		return null;
 	}
 
-
+	/**
+	 * 4、创建聚合注解：TypeMappedAnnotations
+	 *
+	 * @param element 可以被注解标注的元素，类、Class、方法、甚至一个注解
+	 * @param searchStrategy
+	 * @param repeatableContainers
+	 * @param annotationFilter
+	 * @return
+	 */
 	static MergedAnnotations from(AnnotatedElement element, SearchStrategy searchStrategy,
 			RepeatableContainers repeatableContainers, AnnotationFilter annotationFilter) {
-
+		// 该元素若符合下述任一情况，则直接返回空注解：
+		// a.被处理的元素属于java包、被java包中的对象声明，或者就是Ordered.class
+		// b.只查找元素直接声明的注解，但是元素本身没有声明任何注解
+		// c.查找元素的层级结构，但是元素本身没有任何层级结构
+		// d.元素是桥接方法
 		if (AnnotationsScanner.isKnownEmpty(element, searchStrategy)) {
 			return NONE;
 		}
+		// 5、返回一个具体的实现类实例
 		return new TypeMappedAnnotations(element, searchStrategy, repeatableContainers, annotationFilter);
 	}
 
@@ -397,6 +430,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 				@Nullable Object source, Annotation[] annotations) {
 
 			for (Annotation annotation : annotations) {
+				// 找到至少一个不被过滤的、并且可以合成合并注解的注解实例
 				if (annotation != null && !annotationFilter.matches(annotation)) {
 					MergedAnnotation<A> result = process(type, aggregateIndex, source, annotation);
 					if (result != null) {
@@ -411,6 +445,7 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 		private MergedAnnotation<A> process(
 				Object type, int aggregateIndex, @Nullable Object source, Annotation annotation) {
 
+			// 1、若要查找的注解可重复，则先找到其容器注解，然后获取容器中的可重复注解并优先处理
 			Annotation[] repeatedAnnotations = repeatableContainers.findRepeatedAnnotations(annotation);
 			if (repeatedAnnotations != null) {
 				return doWithAnnotations(type, aggregateIndex, source, repeatedAnnotations);
@@ -496,6 +531,10 @@ final class TypeMappedAnnotations implements MergedAnnotations {
 
 	private static class Aggregate {
 
+		/**
+		 * 距离类的距离，类Clazz上有注解B,B被A注解。则在A中就是2，Clazz就是0。
+		 * 用于后续作为取值的优先级，越靠近类的越优先
+		 */
 		private final int aggregateIndex;
 
 		@Nullable

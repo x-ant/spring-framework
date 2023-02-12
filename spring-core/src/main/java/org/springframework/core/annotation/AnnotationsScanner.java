@@ -50,7 +50,9 @@ abstract class AnnotationsScanner {
 
 
 	/**
-	 * 可以获取到的注解的元素，和其对应的注解
+	 * 可以获取到被注解的元素，和其对应的注解。
+	 * getAnnotations() 是可以获取到父类的有 @Inherited 修饰的注解的，
+	 * 而 getDeclaredAnnotations() 则只能获取当前类的注解。
 	 */
 	private static final Map<AnnotatedElement, Annotation[]> declaredAnnotationCache =
 			new ConcurrentReferenceHashMap<>(256);
@@ -66,11 +68,15 @@ abstract class AnnotationsScanner {
 	/**
 	 * Scan the hierarchy of the specified element for relevant annotations and
 	 * call the processor as required.
+	 *
+	 * AnnotationScanner中就这一个允许外部调用的静态方法
+	 *
 	 * @param context an optional context object that will be passed back to the
-	 * processor
-	 * @param source the source element to scan
-	 * @param searchStrategy the search strategy to use
-	 * @param processor the processor that receives the annotations
+	 * processor，一个可选上下文对象，在processor中使用，可以是一个注解字符串名，可以是一个Class可以是一个AnnotationTypeMappings等，
+	 * 要看具体的逻辑咋处理。
+	 * @param source the source element to scan，要被扫描的元素，要扫描谁
+	 * @param searchStrategy the search strategy to use，扫描策略，怎样扫描
+	 * @param processor the processor that receives the annotations，具体的扫描逻辑
 	 * @return the result of {@link AnnotationsProcessor#finish(Object)}
 	 */
 	@Nullable
@@ -438,7 +444,9 @@ abstract class AnnotationsScanner {
 	}
 
 	/**
-	 * 找到当前能被注解标注的元素上有没有对应的注解类型
+	 * 找到当前能被注解标注的元素上有没有对应的注解类型.
+	 * getAnnotations() 是可以获取到父类的有 @Inherited 修饰的注解的，
+	 * 而 getDeclaredAnnotations() 则只能获取当前类的注解。
 	 *
 	 * @param source         能被注解标注的元素
 	 * @param annotationType 需要找的注解类型
@@ -460,7 +468,7 @@ abstract class AnnotationsScanner {
 	/**
 	 * 在当前类AnnotationsScanner缓存了当前类上的注解，并在AttributeMethods中缓存了注解里的属性方法
 	 *
-	 * 获取当前类声明的所有有效注解
+	 * 获取当前类声明的所有注解，如果有一个有效就返回所有注解，然后缓存
 	 *
 	 * @param source    当前元素，当前类
 	 * @param defensive 为true返回克隆对象，操作不影响缓存中的数据
@@ -475,8 +483,11 @@ abstract class AnnotationsScanner {
 		else {
 			// 返回此元素上直接存在的注释。此方法忽略继承的注释。如果此元素上没有直接存在注释，则返回值为长度为 0 的数组。
 			// 此方法的调用者可以自由修改返回的数组；不会影响返回给其他调用者的数组。
+			// getAnnotations() 是可以获取到父类的有 @Inherited 修饰的注解的，
+			// 而 getDeclaredAnnotations() 则只能获取当前类的注解。
 			annotations = source.getDeclaredAnnotations();
 			if (annotations.length != 0) {
+				// 都验证不通过，才会全部忽略，有一个能验证通过就都要
 				boolean allIgnored = true;
 				for (int i = 0; i < annotations.length; i++) {
 					Annotation annotation = annotations[i];
@@ -484,6 +495,7 @@ abstract class AnnotationsScanner {
 					// 代理类上没有注解所以拿了也是空。注解是接口，实际是代理后使用
 
 					// annotationType获取到的是注解本身（接口的Class对象），通过该接口可以获取注解上的注解和注解中声明的方法
+					// 这里做了解析也做了缓存
 					if (isIgnorable(annotation.annotationType()) ||
 							!AttributeMethods.forAnnotationType(annotation.annotationType()).isValid(annotation)) {
 						annotations[i] = null;
@@ -493,12 +505,15 @@ abstract class AnnotationsScanner {
 					}
 				}
 				annotations = (allIgnored ? NO_ANNOTATIONS : annotations);
+				// 是一个类，或者是成员(字段或方法)或构造函数
 				if (source instanceof Class || source instanceof Member) {
+					// 缓存标识source上的所有注解，可以是类可以是方法
 					declaredAnnotationCache.put(source, annotations);
 					cached = true;
 				}
 			}
 		}
+		// 只要可能被缓存，就只能返回clone对象，所以这里排除可能缓存的所有情况
 		if (!defensive || annotations.length == 0 || !cached) {
 			return annotations;
 		}
@@ -509,10 +524,18 @@ abstract class AnnotationsScanner {
 		return AnnotationFilter.PLAIN.matches(annotationType);
 	}
 
+	/**
+	 * 简单判断一个元素上是否有注解，如果没有则返回true，如果可能有就返回false
+	 *
+	 * @param source 元素上是否有可能的注解相对getAnnotations方法来说
+	 * @param searchStrategy 搜索注解的策略，主要是用于判断是否是DIRECT
+	 * @return 如果没有则返回true，如果可能有就返回false
+	 */
 	static boolean isKnownEmpty(AnnotatedElement source, SearchStrategy searchStrategy) {
 		if (hasPlainJavaAnnotationsOnly(source)) {
 			return true;
 		}
+		// 如果是顶级，或者只查找自己，就可以直接返回getDeclaredAnnotations，不用管其它的注解了
 		if (searchStrategy == SearchStrategy.DIRECT || isWithoutHierarchy(source, searchStrategy)) {
 			if (source instanceof Method && ((Method) source).isBridge()) {
 				return false;

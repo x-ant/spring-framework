@@ -38,6 +38,11 @@ import org.springframework.util.ReflectionUtils;
  *
  * <p>To completely disable repeatable support use {@link #none()}.
  *
+ * Repeatable注解的处理。
+ * ExplicitRepeatableContainer 容器信息、被包裹的注解信息、父级信息
+ * StandardRepeatableContainers 容器信息
+ * NoRepeatableContainers 不管容器
+ *
  * @author Phillip Webb
  * @since 5.2
  */
@@ -120,6 +125,9 @@ public abstract class RepeatableContainers {
 	/**
 	 * Create a {@link RepeatableContainers} instance that does not expand any
 	 * repeatable annotations.
+	 *
+	 * 可以认为没有容器注解，或者不管容器注解
+	 *
 	 * @return a {@link RepeatableContainers} instance
 	 */
 	public static RepeatableContainers none() {
@@ -127,14 +135,21 @@ public abstract class RepeatableContainers {
 	}
 
 
-	// 使用 Java 的@Repeatable注释进行搜索的标准RepeatableContainers容器实现。
-	// 提供了 获取当前容器注解 内部的 可重复注解 的实例 的方法
 	/**
 	 * Standard {@link RepeatableContainers} implementation that searches using
 	 * Java's {@link Repeatable @Repeatable} annotation.
+	 *
+	 * 使用 Java 的@Repeatable注释进行搜索的标准RepeatableContainers容器实现。
+	 * 提供了 获取当前容器注解 内部的 可重复注解 的实例 的方法
+	 * 相当于只保存了容器注解的信息
+	 *
+	 * 不包括父级的记录
 	 */
 	private static class StandardRepeatableContainers extends RepeatableContainers {
 
+		/**
+		 * 缓存，容器注解的Class和对应value属性方法，要求容器注解只有value方法，否则就是null
+		 */
 		private static final Map<Class<? extends Annotation>, Object> cache = new ConcurrentReferenceHashMap<>();
 
 		private static final Object NONE = new Object();
@@ -176,9 +191,11 @@ public abstract class RepeatableContainers {
 		}
 
 		/**
-		 * 得到当前可重复注解 容器类型的 属性方法。能检测到要求 容器注解 有且仅有value方法属性
+		 * MyAnnotataions中包括MyAnnotataion[]，这里就是检测MyAnnotataions，其中MyAnnotataion头上标有Repeatable
 		 *
-		 * @param annotationType 可重复注解的容器类型注解
+		 * 容器注解MyAnnotataions 有且仅有value方法属性，才会把这个MyAnnotataion[] value(); 方法返回
+		 *
+		 * @param annotationType 可重复注解的容器类型注解，
 		 * @return 实际存放可重复注解的属性方法
 		 */
 		private static Object computeRepeatedAnnotationsMethod(Class<? extends Annotation> annotationType) {
@@ -202,9 +219,12 @@ public abstract class RepeatableContainers {
 	}
 
 
-	// 可重复注解的容器注解的一个明确封装，提供了 获取所有可重复注解实例的方法，封装了具体的可重复注解的容器注解。
 	/**
 	 * A single explicit mapping.
+	 *
+	 * 可重复注解的容器注解的一个明确封装，提供了 获取所有可重复注解实例的方法，封装了具体的可重复注解的容器注解。
+	 *
+	 * 容器注解和组成的注解的信息都有了，还包括了父级的记录。一个容器里是另一个容器？
 	 */
 	private static class ExplicitRepeatableContainer extends RepeatableContainers {
 
@@ -263,7 +283,7 @@ public abstract class RepeatableContainers {
 		}
 
 		/**
-		 * 根据当前可重复注解 上的 @Repeatable 找到对应的 容器注解
+		 * 根据当前可重复注解 上的 @Repeatable 的value 找到对应的 容器注解
 		 *
 		 * @param repeatable 可重复注解
 		 * @return 容器注解

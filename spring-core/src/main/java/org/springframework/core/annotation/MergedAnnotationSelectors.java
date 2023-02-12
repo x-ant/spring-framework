@@ -23,6 +23,9 @@ import java.util.function.Predicate;
  * {@link MergedAnnotationSelector} implementations that provide various options
  * for {@link MergedAnnotation} instances.
  *
+ * MergedAnnotationSelector 本质上就是一个比较器，用于从两个注解中选择出一个权重更高的注解，
+ * 此处的 “权重”实际就是指注解离被查找元素的距离，距离越近权重就越高
+ *
  * @author Phillip Webb
  * @since 5.2
  * @see MergedAnnotations#get(Class, Predicate, MergedAnnotationSelector)
@@ -41,6 +44,9 @@ public abstract class MergedAnnotationSelectors {
 
 	/**
 	 * Select the nearest annotation, i.e. the one with the lowest distance.
+	 *
+	 * 只考虑距离，不考虑是直接声明的还是继承的
+	 *
 	 * @return a selector that picks the annotation with the lowest distance
 	 */
 	@SuppressWarnings("unchecked")
@@ -51,6 +57,9 @@ public abstract class MergedAnnotationSelectors {
 	/**
 	 * Select the first directly declared annotation when possible. If no direct
 	 * annotations are declared then the nearest annotation is selected.
+	 *
+	 * 如果可能，请选择第一个直接声明的注释。如果未声明直接注释，则选择最近的注释。 尽可能选择第一个直接声明的注释的选择器
+	 *
 	 * @return a selector that picks the first directly declared annotation whenever possible
 	 */
 	@SuppressWarnings("unchecked")
@@ -73,6 +82,7 @@ public abstract class MergedAnnotationSelectors {
 		public MergedAnnotation<Annotation> select(
 				MergedAnnotation<Annotation> existing, MergedAnnotation<Annotation> candidate) {
 
+			// 若候选注解离元素的距离比当前注解更近，则返回候选注解，否则返回当前注解
 			if (candidate.getDistance() < existing.getDistance()) {
 				return candidate;
 			}
@@ -97,6 +107,7 @@ public abstract class MergedAnnotationSelectors {
 		public MergedAnnotation<Annotation> select(
 				MergedAnnotation<Annotation> existing, MergedAnnotation<Annotation> candidate) {
 
+			// 若当前注解没有被元素直接声明，而候选注解被元素直接声明时返回候选注解，否则返回已有注解
 			if (existing.getDistance() > 0 && candidate.getDistance() == 0) {
 				return candidate;
 			}

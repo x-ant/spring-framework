@@ -39,6 +39,12 @@ import org.springframework.util.ConcurrentReferenceHashMap;
  * <p>This class is designed to be cached so that meta-annotations only need to
  * be searched once, regardless of how many times they are actually used.
  *
+ * 有缓存，相当于全局的处理，
+ * 该类型表示一个注解与其元注解之间关联关系 AnnotationTypeMapping 的集合。
+ * 直白点说， AnnotationTypeMappings 用于描述一个注解有哪些元注解，元注解又有哪些元注解。
+ *
+ * 注解与注解间的关系，与@Inherited无关。用到这个说明一定是一个注解
+ *
  * @author Phillip Webb
  * @since 5.2
  * @see AnnotationTypeMapping
@@ -70,33 +76,54 @@ final class AnnotationTypeMappings {
 	}
 
 
+	/**
+	 * 广度优先遍历处理注解，和其上的注解。最终放入mappings中
+	 *
+	 * @param annotationType
+	 */
 	private void addAllMappings(Class<? extends Annotation> annotationType) {
+		// 双端队列的线性实现。当用作栈时，性能优于Stack，当用于队列时，性能优于LinkedList
+		// 这里用作队列
 		Deque<AnnotationTypeMapping> queue = new ArrayDeque<>();
 		addIfPossible(queue, null, annotationType, null);
 		while (!queue.isEmpty()) {
 			AnnotationTypeMapping mapping = queue.removeFirst();
 			this.mappings.add(mapping);
+			// 继续解析下一层
 			addMetaAnnotationsToQueue(queue, mapping);
 		}
 	}
 
+	/**
+	 * 广度一层
+	 *
+	 * @param queue 上一层的注解
+	 * @param source 当前需要处理的上一层的注解
+	 */
 	private void addMetaAnnotationsToQueue(Deque<AnnotationTypeMapping> queue, AnnotationTypeMapping source) {
 		// 从source.getAnnotationType()这个class中拿到其上标注的注解，source.getClass()是注解的实例，即代理类
+		// 获取当前注解上直接声明的元注解，@Inherited不能对注解间的关系生效，source是注解getDeclaredAnnotations足够
 		Annotation[] metaAnnotations = AnnotationsScanner.getDeclaredAnnotations(source.getAnnotationType(), false);
 		for (Annotation metaAnnotation : metaAnnotations) {
+			// 若已经解析过了则跳过，避免“循环引用”
 			if (!isMappable(source, metaAnnotation)) {
 				continue;
 			}
+			// a.若当前正在解析的注解是容器注解，则将内部的可重复注解取出解析 MyAnnoS 中 MyAnno，这里去除Myanno实例
+			// 这里用的是standardRepeatables。因为每个repeatedAnnotations都会被解析，容器中是容器的这种注解最终也能都被解析
 			Annotation[] repeatedAnnotations = this.repeatableContainers.findRepeatedAnnotations(metaAnnotation);
 			if (repeatedAnnotations != null) {
 				for (Annotation repeatedAnnotation : repeatedAnnotations) {
 					if (!isMappable(source, repeatedAnnotation)) {
 						continue;
 					}
+					// 这里就传入的source
 					addIfPossible(queue, source, repeatedAnnotation);
 				}
 			}
+			// b.若当前正在解析的注解不是容器注解，则将直接解析
 			else {
+				// 这里就传入的source
 				addIfPossible(queue, source, metaAnnotation);
 			}
 		}
@@ -121,12 +148,27 @@ final class AnnotationTypeMappings {
 		}
 	}
 
+	/**
+	 * 避免循环
+	 *
+	 * @param source 上一层的注解 就是 metaAnnotation 标注的注解，
+	 * @param metaAnnotation 从source上拿到的注解
+	 * @return
+	 */
 	private boolean isMappable(AnnotationTypeMapping source, @Nullable Annotation metaAnnotation) {
 		return (metaAnnotation != null && !this.filter.matches(metaAnnotation) &&
 				!AnnotationFilter.PLAIN.matches(source.getAnnotationType()) &&
 				!isAlreadyMapped(source, metaAnnotation));
 	}
 
+	/**
+	 * 避免循环，总体是一个树状的结构，树根在下，metaAnnotation就是当前的树叶，source就是枝杈
+	 * 每一层的每一个节点最终都会变成AnnotationTypeMapping相连
+	 *
+	 * @param source 上一层的注解 就是 metaAnnotation 标注的注解，
+	 * @param metaAnnotation 从source上拿到的注解
+	 * @return
+	 */
 	private boolean isAlreadyMapped(AnnotationTypeMapping source, Annotation metaAnnotation) {
 		Class<? extends Annotation> annotationType = metaAnnotation.annotationType();
 		AnnotationTypeMapping mapping = source;
@@ -134,6 +176,7 @@ final class AnnotationTypeMappings {
 			if (mapping.getAnnotationType() == annotationType) {
 				return true;
 			}
+			// 往root方向走一层，root是null
 			mapping = mapping.getSource();
 		}
 		return false;
@@ -163,6 +206,9 @@ final class AnnotationTypeMappings {
 
 	/**
 	 * Create {@link AnnotationTypeMappings} for the specified annotation type.
+	 *
+	 * 静态方法用于创建一个 AnnotationTypeMappings 实例
+	 *
 	 * @param annotationType the source annotation type
 	 * @return type mappings for the annotation type
 	 */
@@ -172,6 +218,9 @@ final class AnnotationTypeMappings {
 
 	/**
 	 * Create {@link AnnotationTypeMappings} for the specified annotation type.
+	 *
+	 * 静态方法用于创建一个 AnnotationTypeMappings 实例
+	 *
 	 * @param annotationType the source annotation type
 	 * @param annotationFilter the annotation filter used to limit which
 	 * annotations are considered
@@ -195,14 +244,17 @@ final class AnnotationTypeMappings {
 	static AnnotationTypeMappings forAnnotationType(Class<? extends Annotation> annotationType,
 			RepeatableContainers repeatableContainers, AnnotationFilter annotationFilter) {
 
+		// 针对可重复注解的容器缓存
 		if (repeatableContainers == RepeatableContainers.standardRepeatables()) {
 			return standardRepeatablesCache.computeIfAbsent(annotationFilter,
 					key -> new Cache(repeatableContainers, key)).get(annotationType);
 		}
+		// 针对不可重复注解的容器缓存
 		if (repeatableContainers == RepeatableContainers.none()) {
 			return noRepeatablesCache.computeIfAbsent(annotationFilter,
 					key -> new Cache(repeatableContainers, key)).get(annotationType);
 		}
+		// 创建一个AnnotationTypeMappings实例 可重复注解，并且一个容器组件是另一个容器？
 		return new AnnotationTypeMappings(repeatableContainers, annotationFilter, annotationType);
 	}
 

@@ -51,6 +51,9 @@ import org.springframework.lang.Nullable;
  * <p>If necessary, a {@code MergedAnnotation} can be {@linkplain #synthesize()
  * synthesized} back into an actual {@link java.lang.annotation.Annotation}.
  *
+ * MergedAnnotation 则表示一个存在层级结构的根注解聚合得到的“合并注解”，
+ * 这个注解的各项属性将会因为根注解和元注解的层级结构而有所不同
+ *
  * @author Phillip Webb
  * @author Juergen Hoeller
  * @author Sam Brannen

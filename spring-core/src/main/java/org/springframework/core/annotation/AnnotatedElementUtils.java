@@ -613,8 +613,8 @@ public abstract class AnnotatedElementUtils {
 	 * within a single annotation and within the annotation hierarchy.
 	 * <p>This method follows <em>find semantics</em> as described in the
 	 * {@linkplain AnnotatedElementUtils class-level javadoc}.
-	 * @param element the annotated element
-	 * @param annotationType the annotation type to find
+	 * @param element the annotated element，要被分析的注解实例
+	 * @param annotationType the annotation type to find，要被分析的注解类型
 	 * @return the merged, synthesized {@code Annotation}, or {@code null} if not found
 	 * @since 4.2
 	 * @see #findAllMergedAnnotations(AnnotatedElement, Class)
@@ -624,13 +624,19 @@ public abstract class AnnotatedElementUtils {
 	@Nullable
 	public static <A extends Annotation> A findMergedAnnotation(AnnotatedElement element, Class<A> annotationType) {
 		// Shortcut: directly present on the element, with no merging needed?
+		// 1、下述任意情况下直接获取元素上声明的注解，不合并：
+		// a.查找的注解属于java、javax或者org.springframework.lang包
+		// b.被处理的元素属于java包，或被java包中的对象声明，或者就是Ordered.class
 		if (AnnotationFilter.PLAIN.matches(annotationType) ||
 				AnnotationsScanner.hasPlainJavaAnnotationsOnly(element)) {
 			return element.getDeclaredAnnotation(annotationType);
 		}
 		// Exhaustive retrieval of merged annotations...
+		// 2、将元素上的全部注解合成MergedAnnotations
 		return findAnnotations(element)
+				// 3、从MergedAnnotation获取与该类型对应的MergedAnnotations
 				.get(annotationType, null, MergedAnnotationSelectors.firstDirectlyDeclared())
+				// 4、根据MergedAnnotation通过动态代理生成一个注解实例
 				.synthesize(MergedAnnotation::isPresent).orElse(null);
 	}
 
@@ -761,6 +767,8 @@ public abstract class AnnotatedElementUtils {
 	}
 
 	private static MergedAnnotations findAnnotations(AnnotatedElement element) {
+		// 1、配置重复注解容器：空容器
+		// 2、配置查找策略：查找类、全部父类以及其父接口
 		return MergedAnnotations.from(element, SearchStrategy.TYPE_HIERARCHY, RepeatableContainers.none());
 	}
 

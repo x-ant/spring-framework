@@ -326,7 +326,7 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 	 */
 	static MergedAnnotations from(AnnotatedElement element, SearchStrategy searchStrategy,
 			RepeatableContainers repeatableContainers) {
-
+		// 3、配置注解过滤器：过滤属于`java`、`javax`或者`org.springframework.lang`包的注解
 		return from(element, searchStrategy, repeatableContainers, AnnotationFilter.PLAIN);
 	}
 
@@ -446,10 +446,11 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 		 * Find only directly declared annotations, without considering
 		 * {@link Inherited @Inherited} annotations and without searching
 		 * superclasses or implemented interfaces.
+		 *
+		 * 只查找元素上直接声明的注解，不包括通过 @Inherited 继承的注解；
 		 */
 		DIRECT,
 
-		// 查找所有直接声明的注解以及任何@Inherited超类注解，只有类有效。接口方法无效。
 		/**
 		 * Find all directly declared annotations as well as any
 		 * {@link Inherited @Inherited} superclass annotations. This strategy
@@ -457,6 +458,8 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 		 * {@link Inherited @Inherited} annotation is ignored for all other
 		 * {@linkplain AnnotatedElement annotated elements}. This strategy does
 		 * not search implemented interfaces.
+		 *
+		 * 只查找元素直接声明或通过 @Inherited 继承的注解；@Inherited只有类有效。接口方法无效。
 		 */
 		INHERITED_ANNOTATIONS,
 
@@ -465,6 +468,8 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 		 * is similar to {@link #INHERITED_ANNOTATIONS} except the annotations
 		 * do not need to be meta-annotated with {@link Inherited @Inherited}.
 		 * This strategy does not search implemented interfaces.
+		 *
+		 * 查找元素直接声明或所有父类的注解；
 		 */
 		SUPERCLASS,
 
@@ -472,6 +477,8 @@ public interface MergedAnnotations extends Iterable<MergedAnnotation<Annotation>
 		 * Perform a full search of the entire type hierarchy, including
 		 * superclasses and implemented interfaces. Superclass annotations do
 		 * not need to be meta-annotated with {@link Inherited @Inherited}.
+		 *
+		 * 查找元素、所有父类以及实现的父接口的全部注解； 默认
 		 */
 		TYPE_HIERARCHY,
 
