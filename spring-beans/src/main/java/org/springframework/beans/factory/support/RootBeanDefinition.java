@@ -124,6 +124,9 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	@Nullable
 	volatile Boolean beforeInstantiationResolved;
 
+	/**
+	 * 放@Autowired,@Value，@Resource注解 的 属性和方法
+	 */
 	@Nullable
 	private Set<Member> externallyManagedConfigMembers;
 
@@ -133,6 +136,9 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 	@Nullable
 	private Set<String> externallyManagedInitMethods;
 
+	/**
+	 * 放有@PreDestroy注解修饰的 方法
+	 */
 	@Nullable
 	private Set<String> externallyManagedDestroyMethods;
 
