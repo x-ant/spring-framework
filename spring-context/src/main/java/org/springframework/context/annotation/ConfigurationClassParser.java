@@ -599,7 +599,12 @@ class ConfigurationClassParser {
 					 *
 					 * 1、ImportSelector的类型，不作为bd注册，只是为了提供selectImports方法，不会解析类上的或者内部的注解。
 					 * 不作为一个bean，只是为了实例化，然后调用里面的selectImports方法。例如selectImports返回的全类名A，
-					 * 被认定为是在原配置类上有一个@Import(A)，再看A实现了什么接口
+					 * 被认定为是在原配置类上有一个@Import(A)，再看A实现了什么接口。
+					 * 自动配置类就是用这个接口实现，所以导入的类想要被解析其上和内部的注解，就需要是一个普通的类，
+					 * 不能继承ImportSelector和ImportBeanDefinitionRegistrar这俩接口，作为Configuration解析，
+					 * 然后标注@Configuration，使用代理保证单例。
+					 * 自动配置主要是为了解耦，不需要知道具体的实现。所以是读配置文件而不是直接写到代码里。
+					 * 自动配置主要是作为默认实现，所以需要实现DeferredImportSelector，晚于主配置类的解析。
 					 *
 					 * 2、ImportBeanDefinitionRegistrar，不作为bd注册，只是作为原配置类中的一个属性，之后作为回调，不会解析
 					 * 这个类上或者内部的注解，不作为一个bean，只是为了实例化，然后回调里面的方法。
