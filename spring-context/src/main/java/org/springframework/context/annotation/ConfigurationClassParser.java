@@ -231,6 +231,16 @@ class ConfigurationClassParser {
 	}
 
 
+	/**
+	 * 每一个配置类都会走到这个方法，完整解析这个配置类后保存到configurationClasses
+	 *
+	 * 在外部方法中，如果这个类是被@Import导入的则会在loadBeanDefinitions中注册bd。
+	 * 而通过@ComponentScan扫描的，扫描后就会放到bd中
+	 *
+	 * @param configClass 但概念配置类
+	 * @param filter 过滤器
+	 * @throws IOException
+	 */
 	protected void processConfigurationClass(ConfigurationClass configClass, Predicate<String> filter) throws IOException {
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
@@ -585,10 +595,17 @@ class ConfigurationClassParser {
 			try {
 				for (SourceClass candidate : importCandidates) {
 					/*
-					 * Import的类一共有三种类型
-					 * 1、ImportSelector的类型
-					 * 2、ImportBeanDefinitionRegistrar
-					 * 3、普通的类
+					 * Import的类一共有三种类型，内部出现的延迟逻辑，都是延迟到当前所有的上一次扫描的配置类全部解析结束才会调用。
+					 *
+					 * 1、ImportSelector的类型，不作为bd注册，只是为了提供selectImports方法，不会解析类上的或者内部的注解。
+					 * 不作为一个bean，只是为了实例化，然后调用里面的selectImports方法。例如selectImports返回的全类名A，
+					 * 被认定为是在原配置类上有一个@Import(A)，再看A实现了什么接口
+					 *
+					 * 2、ImportBeanDefinitionRegistrar，不作为bd注册，只是作为原配置类中的一个属性，之后作为回调，不会解析
+					 * 这个类上或者内部的注解，不作为一个bean，只是为了实例化，然后回调里面的方法。
+					 *
+					 * 3、普通的类，和上面两个不同，普通类会被解析为一个新的配置类，重新进入完整的匹配规则，包
+					 * 括匹配有没有别的注解。比如@ComponentScan
 					 */
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
@@ -668,6 +685,8 @@ class ConfigurationClassParser {
 
 	/**
 	 * Factory method to obtain a {@link SourceClass} from a {@link ConfigurationClass}.
+	 *
+	 * 封装Class和注解
 	 */
 	private SourceClass asSourceClass(ConfigurationClass configurationClass, Predicate<String> filter) throws IOException {
 		AnnotationMetadata metadata = configurationClass.getMetadata();
@@ -993,6 +1012,12 @@ class ConfigurationClassParser {
 			return new AssignableTypeFilter(clazz).match((MetadataReader) this.source, metadataReaderFactory);
 		}
 
+		/**
+		 * 传入了importedBy，在外面判断这个配置类是import导入的，就会把这个类也注册到bd
+		 *
+		 * @param importedBy 来源于那个类
+		 * @return 配置类
+		 */
 		public ConfigurationClass asConfigClass(ConfigurationClass importedBy) {
 			if (this.source instanceof Class) {
 				return new ConfigurationClass((Class<?>) this.source, importedBy);

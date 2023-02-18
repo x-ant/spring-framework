@@ -1,6 +1,7 @@
 package com.learn.shadow.config;
 
-import org.springframework.context.annotation.ComponentScan;
+import com.learn.shadow.bean.X1;
+import org.springframework.context.annotation.Import;
 
 /**
  * .
@@ -8,6 +9,6 @@ import org.springframework.context.annotation.ComponentScan;
  *
  * @author XHQ
  */
-@ComponentScan("com.learn.shadow")
+@Import(X1.class)
 public class ShadowConfig {
 }

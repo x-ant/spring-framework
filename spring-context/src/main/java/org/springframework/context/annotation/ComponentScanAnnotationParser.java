@@ -72,9 +72,16 @@ class ComponentScanAnnotationParser {
 		this.registry = registry;
 	}
 
-
+	/**
+	 * 不进行特殊配置，只会扫描Component、ManagedBean、Named
+	 * 要注意的是@Import和@ImportResource都没有被@Component标记
+	 *
+	 * @param componentScan 需要处理的componentScan
+	 * @param declaringClass 在那个类上面声明的，扫描的时候排除自己，别搞一个扫描器专扫描自己
+	 * @return 这里只是扫描拿到bd，然后返回
+	 */
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, final String declaringClass) {
-		// 为什么要重新new一个新的扫描器
+		// 为什么要重新new一个新的扫描器，useDefaultFilters默认为true，只会扫描Component、ManagedBean、Named
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
 
@@ -124,6 +131,7 @@ class ComponentScanAnnotationParser {
 			basePackages.add(ClassUtils.getPackageName(declaringClass));
 		}
 
+		// 去掉当前类，不要来回死循环扫描
 		scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false) {
 			@Override
 			protected boolean matchClassName(String className) {
