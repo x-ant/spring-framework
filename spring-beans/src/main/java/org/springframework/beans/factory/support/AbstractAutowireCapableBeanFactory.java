@@ -507,6 +507,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
+			// 实例化前的处理，给InstantiationAwareBeanPostProcessor一个机会返回代理对象来替代真正的bean实例
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -1130,17 +1131,24 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Nullable
 	protected Object resolveBeforeInstantiation(String beanName, RootBeanDefinition mbd) {
 		Object bean = null;
+		// null或true就可以
 		if (!Boolean.FALSE.equals(mbd.beforeInstantiationResolved)) {
 			// Make sure bean class is actually resolved at this point.
+			//1.mbd不是合成的，并且BeanFactory中存在InstantiationAwareBeanPostProcessor
 			if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+				//2.解析beanName对应的Bean实例的类型
 				Class<?> targetType = determineTargetType(beanName, mbd);
 				if (targetType != null) {
+					//3.实例化前的后置处理器应用(处理InstantiationAwareBeanPostProcessor)
 					bean = applyBeanPostProcessorsBeforeInstantiation(targetType, beanName);
 					if (bean != null) {
+						//4.如果返回的bean不为空，会跳过Spring默认的实例化过程
+						//所以只能在这里调用BeanPostProcessor实现类的PostProcessorsAfterInitialization方法
 						bean = applyBeanPostProcessorsAfterInitialization(bean, beanName);
 					}
 				}
 			}
+			//5.如果bean不为空，则将beforeInstantiationResolved赋值为true，代表在实例化之前已经解析
 			mbd.beforeInstantiationResolved = (bean != null);
 		}
 		return bean;
@@ -1159,11 +1167,17 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 */
 	@Nullable
 	protected Object applyBeanPostProcessorsBeforeInstantiation(Class<?> beanClass, String beanName) {
+		//1.遍历当前BeanFactory中的BeanPostProcessor
 		for (BeanPostProcessor bp : getBeanPostProcessors()) {
+			//2.应用InstantiationAwareBeanPostProcessor后置处理器，允许PostProcessorBeforeInstantiation方法返回bean对象的代理
 			if (bp instanceof InstantiationAwareBeanPostProcessor) {
 				InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+				//3.执行postProcessBeforeInstantiation方法，在Bean实例化前操作，
+				//该方法可以返回一个构造完成的Bean实例，从而不会继续执行创建Bean实例的"正规流程"
+				// AbstractAutoProxyCreator类中的postProcessBeforeInstantiation
 				Object result = ibp.postProcessBeforeInstantiation(beanClass, beanName);
 				if (result != null) {
+					//4.如果result不为null，也就是有后置处理器返回了bean实例对象，则会跳过Spring默认的实例化过程。
 					return result;
 				}
 			}

@@ -132,6 +132,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	@Nullable
 	private BeanFactory beanFactory;
 
+	/**
+	 * 当在实例化前置方法 postProcessBeforeInstantiation 中创建了代理类,
+	 * 则在 targetSourcedBeans 中将添加 beanName,
+	 * 也就是 targetSourcedBeans 中含有 beanName
+	 * 则说明这个类被动态代理了
+	 */
 	private final Set<String> targetSourcedBeans = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
 	private final Map<Object, Object> earlyProxyReferences = new ConcurrentHashMap<>(16);
@@ -241,10 +247,19 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
+	/**
+	 * 在创建Bean的流程中还没调用构造器来实例化Bean的时候进行调用(实例化前后)
+	 * AOP解析切面以及事务解析事务注解都是在这里完成的，自己定义了被代理的bean，可以实现按方法返回创建被代理的bean
+	 *
+	 * @param beanClass the class of the bean to be instantiated
+	 * @param beanName the name of the bean
+	 * @return
+	 */
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
+		// 这里为啥要判断，为空或者没有被代理的才能进入
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
@@ -258,11 +273,16 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
+		// 获取用户自定义的targetSource, 如果存在则直接在对象实例化之前进行代理创建,
+		// 避免了目标对象不必要的实例化
 		TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
+		//如果有自定义targetSource就要这里创建代理对象
+		//这样做的好处是被代理的对象可以动态改变，而不是值针对一个target对象(可以对对象池中对象进行代理，可以每次创建代理都创建新对象
 		if (targetSource != null) {
 			if (StringUtils.hasLength(beanName)) {
 				this.targetSourcedBeans.add(beanName);
 			}
+			//获取Advisors, 这个是交给子类实现的
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
 			Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
 			this.proxyTypes.put(cacheKey, proxy.getClass());
@@ -359,6 +379,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 	/**
+	 * 是否是不应该被代理的基础类
+	 *
 	 * Return whether the given bean class represents an infrastructure class
 	 * that should never be proxied.
 	 * <p>The default implementation considers Advices, Advisors and

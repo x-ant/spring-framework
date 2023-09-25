@@ -120,6 +120,7 @@ public class RootBeanDefinition extends AbstractBeanDefinition {
 
 	/**
 	 * Package-visible field that indicates a before-instantiation post-processor having kicked in.
+	 * bean在实例化前已经解析，可以返回一个自己定义的类替换bean
 	 */
 	@Nullable
 	volatile Boolean beforeInstantiationResolved;

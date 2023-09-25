@@ -602,7 +602,7 @@ class ConfigurationClassParser {
 					 * 被认定为是在原配置类上有一个@Import(A)，再看A实现了什么接口。
 					 * 自动配置类就是用这个接口实现，所以导入的类想要被解析其上和内部的注解，就需要是一个普通的类，
 					 * 不能继承ImportSelector和ImportBeanDefinitionRegistrar这俩接口，作为Configuration解析，
-					 * 然后标注@Configuration，使用代理保证单例。
+					 * 如果标注@Configuration，可以使用代理保证单例。
 					 * 自动配置主要是为了解耦，不需要知道具体的实现。所以是读配置文件而不是直接写到代码里。
 					 * 自动配置主要是作为默认实现，所以需要实现DeferredImportSelector，晚于主配置类的解析。
 					 *

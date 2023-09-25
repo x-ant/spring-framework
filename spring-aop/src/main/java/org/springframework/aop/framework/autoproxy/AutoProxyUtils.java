@@ -117,6 +117,8 @@ public abstract class AutoProxyUtils {
 	}
 
 	/**
+	 * 符合原始后缀这种条件的bean名称对应的bean不应该被代理
+	 *
 	 * Determine whether the given bean name indicates an "original instance"
 	 * according to {@link AutowireCapableBeanFactory#ORIGINAL_INSTANCE_SUFFIX},
 	 * skipping any proxy attempts for it.
