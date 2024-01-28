@@ -16,6 +16,7 @@ public class UserConfig {
 
 	@Bean
 	public User user() {
+		System.out.println(this);
 		System.out.println("init");
 		return new User("testId", "testName");
 	}
@@ -30,7 +31,8 @@ public class UserConfig {
 	 */
 	@Bean
 	public Admin admin() {
-		new User();
+		System.out.println(this);
+		user();
 		return new Admin();
 	}
 

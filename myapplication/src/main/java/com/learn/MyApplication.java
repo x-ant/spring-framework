@@ -2,6 +2,7 @@ package com.learn;
 
 import com.learn.config.MybatisConfig;
 import com.learn.service.PaymentService;
+import com.learn.start.UserConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -34,8 +35,6 @@ public class MyApplication {
 	 * 16、put singletonObjects
 	 */
 	public static void main(String[] args) {
-		AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(MybatisConfig.class);
-		PaymentService bean = ac.getBean(PaymentService.class);
-		log.info("{}", bean.list());
+		AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(UserConfig.class);
 	}
 }

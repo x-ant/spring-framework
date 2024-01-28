@@ -39,6 +39,8 @@ import org.springframework.util.StringUtils;
  * Provides mapping information for a single annotation (or meta-annotation) in
  * the context of a root annotation type.
  *
+ * 代表注解上被标注的注解这种层级关系中的一个注解，用于说明自己的方法中，自己覆盖自己 和 下级覆盖自己的情况
+ *
  * 完成了一个注解的属性映射，处理了AliasFor和上下级注解间同名属性的处理，确定了一个注解间和上下级注解间的取值的问题。
  * 没有对应的取值逻辑，但是提供了取值所需的所有信息。这个类并不是一个全局的类，所以内部没有对应的缓存。
  * 通过new来创建，而不是forxxx来创建。构造方法中就完成了所有功能。虽然解析了上下级关系，但是只处理自己。上下级需要自己new。
@@ -119,7 +121,8 @@ final class AnnotationTypeMapping {
 	private final Annotation annotation;
 
 	/**
-	 * 注解和其声明的属性方法的封装
+	 * 当前对象代表的注解和这个注解声明的属性方法的封装
+	 * 只是这个注解的属性方法，不包括父级继承的
 	 */
 	private final AttributeMethods attributes;
 
@@ -169,7 +172,7 @@ final class AnnotationTypeMapping {
 	/**
 	 * 获取AliasFor注解的配置，保存为aliasedBy
 	 *
-	 * 其中key为被覆盖的属性方法，value是用于覆盖的属性方法 的map
+	 * 其中key为被覆盖的属性方法，value是用于覆盖的属性方法 的map。说明我覆盖了谁，value覆盖了key
 	 * 要注意的是，key可以是自己的属性方法，也可以是别的注解的属性方法，但是value一定是自己的属性方法
 	 */
 	private final Map<Method, List<Method>> aliasedBy;
@@ -212,7 +215,7 @@ final class AnnotationTypeMapping {
 		this.conventionMappings = filledIntArray(this.attributes.size());
 		this.annotationValueMappings = filledIntArray(this.attributes.size());
 		this.annotationValueSource = new AnnotationTypeMapping[this.attributes.size()];
-		// key是被覆盖的属性方法，value是当前注解中用于覆盖的属性方法。
+		// key是被覆盖的属性方法，value是当前注解中用于覆盖的属性方法。说明我覆盖了谁
 		// 同名的话，相当于有一个在key，另一个在value。不是两个都在value
 		this.aliasedBy = resolveAliasedForTargets();
 		// 初始化别名属性，为所有存在别名的属性建立MirrorSet
@@ -408,6 +411,7 @@ final class AnnotationTypeMapping {
 	 * 获取构建 当前属性方法，和覆盖当前属性方法的属性方法的 列表。收集跨注解的同名覆盖
 	 *
 	 * aliases最初有一个值，然后通过注解向被注解的注解方向寻找，看看有没有别的属性方法覆盖这个最初的值，有的话就放到这个列表里
+	 * aliases始终表示某一个属性方法的所有别名情况
 	 *
 	 * @param aliases 当前aliases中的属性方法，如果在从自己开始的向下寻找中发现被别的注解的属性方法覆盖，则也放到这个列表中
 	 */
@@ -417,11 +421,11 @@ final class AnnotationTypeMapping {
 		while (mapping != null) {
 			int size = aliases.size();
 			for (int j = 0; j < size; j++) {
-				// 获取当前注解中用于覆盖别的注解的方法，向上迭代过程中确实发现了这种被覆盖的方法。
-				// 其实就是说明这些用于覆盖的方法上的AliasFor注解确实用到了
+				// 获取当前mapping注解中，用于覆盖aliases.get(j)的注解的方法，
+				// aliases 最初放的是这个注解的方法。所以这里得到的一定是覆盖当前注解方法的方法，一定是同级或者下级
 				List<Method> additional = mapping.aliasedBy.get(aliases.get(j));
 				if (additional != null) {
-					// 别名里就加上 用于覆盖自己的属性，或者被下级覆盖的属性
+					// 覆盖aliases.get(j)，说明是别名，也加入作为下一次查找 被覆盖 的条件
 					aliases.addAll(additional);
 				}
 			}
@@ -432,9 +436,11 @@ final class AnnotationTypeMapping {
 
 	/**
 	 * 针对当前被覆盖属性i，解析@AliasFor确定当前属性要到哪一个属性中取值
+	 * 结果记录到  annotationValueMappings 和 annotationValueSource 中 自己的某一个属性实际要从那个注解中取值
 	 *
 	 * @param attributeIndex 这时当前注解的哪一个被覆盖属性方法的索引
-	 * @param aliases 这个属性方法包括被覆盖的自己的所有别名，这个值是跨注解的
+	 * @param aliases 这个属性方法包括被覆盖的自己的所有别名，这个值是跨注解的，
+	 *                   当前注解自己和自己被覆盖的情况，不包括自己覆盖别人
 	 */
 	private void processAliases(int attributeIndex, List<Method> aliases) {
 		// 最初解析的那个注解的索引rootAttributeIndex对应的属性方法，覆盖了当前注解中的属性方法。
@@ -448,6 +454,7 @@ final class AnnotationTypeMapping {
 					// 解析时从上到下的过程，Component到Configuration，所以这里代表当前注解Component中的属性被覆盖了。
 					if (aliases.contains(mapping.attributes.get(i))) {
 						// 记录当前注解中被root注解覆盖的情况，位图法都改为指向 同名中最小方法属性。其余为-1
+						// 最终每一层的mapping都会判断
 						mapping.aliasMappings[i] = rootAttributeIndex;
 					}
 				}
@@ -488,7 +495,7 @@ final class AnnotationTypeMapping {
 		// 最初解析的是谁
 		AttributeMethods rootAttributes = this.root.getAttributes();
 		for (int i = 0; i < rootAttributes.size(); i++) {
-			// 根注解用@AliasFor标注了当前属性
+			// 根注解在层层关系中，@AliasFor覆盖了当前属性
 			if (aliases.contains(rootAttributes.get(i))) {
 				// 返回根注解第一个属性方法的索引
 				return i;
@@ -926,7 +933,7 @@ final class AnnotationTypeMapping {
 				// 包含，说明要么被覆盖，要么是用于覆盖的
 				if (aliases.contains(attribute)) {
 					size++;
-					// size > 1 说明除了当前被属性方法，看看有没有别的覆盖了自己
+					// size > 1 当前注解中的属性方法在同名列表中出现两次，说明有两个是互为别名的
 					if (size > 1) {
 						// 为空才创建，只创建一次。所有其它别名使用同一个MirrorSet对象，
 						if (mirrorSet == null) {
@@ -941,7 +948,7 @@ final class AnnotationTypeMapping {
 					last = i;
 				}
 			}
-			// 上面的for循环检查了当前属性，在当前注解中是否有互为别名的情况，为自己和其它每一个创建一个mirrorSet
+			// 上面的for循环检查了当前属性，在当前注解中是否有互为别名的情况，自己和其它都指向同一个mirrorSet
 			if (mirrorSet != null) {
 				mirrorSet.update();
 				// 去重完就还剩一个
@@ -1001,7 +1008,7 @@ final class AnnotationTypeMapping {
 		class MirrorSet {
 
 			/**
-			 * 当前属性方法中共享一个别名的有几个
+			 * 当前注解中，同名属性有几个
 			 */
 			private int size;
 
@@ -1031,7 +1038,7 @@ final class AnnotationTypeMapping {
 			 * 解析并判断当前注解中 互为别名的属性。找出最后一个有值的方法属性。
 			 * 如果存在多个有值且不同，则报错。如果都是默认值或者为空 也是返回最后一个方法属性的索引。
 			 *
-			 * 确定互为别名，用哪一个属性方法作为取值方法
+			 * 确定同注解互为别名，用哪一个属性方法作为取值方法
 			 *
 			 * @param source         被注解标注的注解，和source属性是同一个意思，只是用做提示，没啥用
 			 * @param annotation     当前注解实例

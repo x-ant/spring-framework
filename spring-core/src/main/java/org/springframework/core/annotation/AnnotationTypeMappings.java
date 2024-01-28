@@ -62,6 +62,10 @@ final class AnnotationTypeMappings {
 
 	private final AnnotationFilter filter;
 
+	/**
+	 * 核心属性，就是为了得到这个属性。
+	 * 是从当前注解，即注解在当前注解上的所有层级注解的列表合集
+	 */
 	private final List<AnnotationTypeMapping> mappings;
 
 
@@ -77,7 +81,7 @@ final class AnnotationTypeMappings {
 
 
 	/**
-	 * 广度优先遍历处理注解，和其上的注解。最终放入mappings中
+	 * 广度优先遍历处理注解，和其上的注解。最终放入mappings中，就是为了得到 this.mappings
 	 *
 	 * @param annotationType
 	 */
@@ -85,6 +89,7 @@ final class AnnotationTypeMappings {
 		// 双端队列的线性实现。当用作栈时，性能优于Stack，当用于队列时，性能优于LinkedList
 		// 这里用作队列
 		Deque<AnnotationTypeMapping> queue = new ArrayDeque<>();
+		// 没有source，所以是当前注解annotationType，自己覆盖自己的情况和自己属性方法的情况
 		addIfPossible(queue, null, annotationType, null);
 		while (!queue.isEmpty()) {
 			AnnotationTypeMapping mapping = queue.removeFirst();
@@ -95,7 +100,7 @@ final class AnnotationTypeMappings {
 	}
 
 	/**
-	 * 广度一层
+	 * 广度一层，处理注解在自己上的注解
 	 *
 	 * @param queue 上一层的注解
 	 * @param source 当前需要处理的上一层的注解

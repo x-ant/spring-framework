@@ -222,6 +222,11 @@ public class Enhancer extends AbstractClassGenerator {
 
 	private boolean validateCallbackTypes;
 
+	/**
+	 * 是否只生成Class对象，不创建实例
+	 * 配合 Enhancer.registerStaticCallbacks(subclass, CALLBACKS); 使用
+	 * 使用后生成的class可以用newInstance()创建代理后的实例
+	 */
 	private boolean classOnly;
 
 	private Class superclass;
